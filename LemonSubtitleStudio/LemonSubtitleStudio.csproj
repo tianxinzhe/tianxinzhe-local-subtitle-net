@@ -1,0 +1,30 @@
+
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ApplicationIcon>Resources\app.ico</ApplicationIcon>
+    <AssemblyName>LemonSubtitleStudio</AssemblyName>
+    <RootNamespace>LemonSubtitleStudio</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Prism.Wpf" Version="8.1.97" />
+    <PackageReference Include="Prism.Core" Version="8.1.97" />
+    <PackageReference Include="Whisper.net" Version="1.5.0" />
+    <PackageReference Include="Whisper.net.Runtime" Version="1.5.0" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.16.0" />
+    <PackageReference Include="Xabe.FFmpeg" Version="5.3.1" />
+    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.118" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\**" />
+    <Page Include="Views\**" />
+    <Compile Include="ViewModels\**" />
+    <Compile Include="Services\**" />
+    <Compile Include="Models\**" />
+    <Compile Include="Converters\**" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Subtitle Editor | Lemon Subtitle Studio</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@100..900&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-tertiary-fixed": "#001f2a",
+                    "primary-fixed-dim": "#ffb95c",
+                    "outline-variant": "#534433",
+                    "background": "#111125",
+                    "tertiary-fixed-dim": "#6bd3ff",
+                    "primary-fixed": "#ffddb7",
+                    "on-secondary": "#09305c",
+                    "secondary-fixed-dim": "#a9c8fc",
+                    "on-background": "#e2e0fc",
+                    "secondary": "#a9c8fc",
+                    "surface-dim": "#111125",
+                    "on-secondary-fixed": "#001b3c",
+                    "on-primary-fixed-variant": "#653e00",
+                    "on-tertiary-fixed-variant": "#004d65",
+                    "surface": "#111125",
+                    "on-surface-variant": "#d9c3ac",
+                    "surface-container-high": "#28283d",
+                    "outline": "#a18e79",
+                    "inverse-on-surface": "#2f2e43",
+                    "primary-container": "#ffa500",
+                    "inverse-primary": "#855400",
+                    "surface-variant": "#333348",
+                    "primary": "#ffcb8c",
+                    "surface-container-highest": "#333348",
+                    "surface-bright": "#37374d",
+                    "surface-container": "#1e1e32",
+                    "on-primary-container": "#684000",
+                    "tertiary-fixed": "#bee9ff",
+                    "on-tertiary": "#003546",
+                    "surface-tint": "#ffb95c",
+                    "surface-container-lowest": "#0c0c1f",
+                    "inverse-surface": "#e2e0fc",
+                    "tertiary": "#98ddff",
+                    "error-container": "#93000a",
+                    "on-error": "#690005",
+                    "on-error-container": "#ffdad6",
+                    "secondary-container": "#294a77",
+                    "surface-container-low": "#1a1a2e",
+                    "on-primary": "#462a00",
+                    "on-primary-fixed": "#2a1700",
+                    "error": "#ffb4ab",
+                    "on-secondary-fixed-variant": "#274774",
+                    "tertiary-container": "#02c7ff",
+                    "secondary-fixed": "#d5e3ff",
+                    "on-tertiary-container": "#004f68",
+                    "on-secondary-container": "#9bbaee",
+                    "on-surface": "#e2e0fc"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "sidebar_width": "240px",
+                    "unit": "4px",
+                    "xs": "4px",
+                    "md": "16px",
+                    "lg": "24px",
+                    "header_height": "56px",
+                    "xl": "32px",
+                    "sm": "8px"
+            },
+            "fontFamily": {
+                    "h2": ["Segoe UI"],
+                    "body-md": ["Segoe UI"],
+                    "mono": ["Cascadia Code"],
+                    "label-caps": ["Segoe UI"],
+                    "h1": ["Segoe UI"],
+                    "body-sm": ["Segoe UI"]
+            },
+            "fontSize": {
+                    "h2": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "mono": ["13px", {"lineHeight": "18px", "fontWeight": "400"}],
+                    "label-caps": ["11px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                    "h1": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #534433;
+            border-radius: 2px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #a18e79;
+        }
+        .timeline-container {
+            background-image: linear-gradient(to right, #333348 1px, transparent 1px);
+            background-size: 40px 100%;
+        }
+        .glass-panel {
+            background: rgba(26, 26, 46, 0.8);
+            backdrop-filter: blur(8px);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md selection:bg-primary-container selection:text-on-primary-container overflow-hidden">
+<!-- Sidebar Navigation -->
+<aside class="fixed left-0 top-0 h-full w-[240px] bg-surface-container-low border-r border-outline-variant flex flex-col p-md z-50">
+<div class="mb-lg">
+<h1 class="font-h1 text-h1 text-primary-container font-bold tracking-tight">Lemon Subtitle Studio</h1>
+<p class="text-body-sm text-on-surface-variant mt-1 opacity-80">GPU: Active • CPU: 12%</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center px-3 py-2 text-on-surface-variant hover:bg-surface-variant rounded-lg transition-colors duration-200" href="#">
+<span class="material-symbols-outlined mr-3">closed_caption</span>
+<span class="font-body-md">Video → Subtitle</span>
+</a>
+<a class="flex items-center px-3 py-2 text-on-surface-variant hover:bg-surface-variant rounded-lg transition-colors duration-200" href="#">
+<span class="material-symbols-outlined mr-3">movie</span>
+<span class="font-body-md">Video → Audio</span>
+</a>
+<a class="flex items-center px-3 py-2 text-on-surface-variant hover:bg-surface-variant rounded-lg transition-colors duration-200" href="#">
+<span class="material-symbols-outlined mr-3">audiotrack</span>
+<span class="font-body-md">Audio → Subtitle</span>
+</a>
+<a class="flex items-center px-3 py-2 text-on-surface-variant hover:bg-surface-variant rounded-lg transition-colors duration-200" href="#">
+<span class="material-symbols-outlined mr-3">translate</span>
+<span class="font-body-md">Subtitle Translation</span>
+</a>
+<a class="flex items-center px-3 py-2 text-primary-fixed-dim bg-secondary-container rounded-lg font-bold" href="#">
+<span class="material-symbols-outlined mr-3" style="font-variation-settings: 'FILL' 1;">edit_note</span>
+<span class="font-body-md">Subtitle Editor</span>
+</a>
+<a class="flex items-center px-3 py-2 text-on-surface-variant hover:bg-surface-variant rounded-lg transition-colors duration-200" href="#">
+<span class="material-symbols-outlined mr-3">settings</span>
+<span class="font-body-md">Settings</span>
+</a>
+</nav>
+<div class="mt-auto space-y-3">
+<button class="w-full py-2 bg-surface-container-high border border-outline-variant text-on-surface rounded-lg text-body-sm hover:bg-surface-variant transition-colors">
+                Check for Updates
+            </button>
+<div class="flex items-center justify-between px-2 text-on-surface-variant text-body-sm">
+<div class="flex items-center">
+<span class="material-symbols-outlined text-[18px] mr-1">language</span>
+<span>Language</span>
+</div>
+<div class="flex items-center">
+<span class="material-symbols-outlined text-[18px] mr-1">info</span>
+<span>v2.4.0</span>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-[240px] h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center h-[56px] px-lg border-b border-outline-variant bg-surface shrink-0">
+<div class="flex items-center gap-md">
+<button class="flex items-center gap-xs px-3 py-1 bg-surface-container-high hover:bg-surface-variant text-on-surface rounded border border-outline-variant transition-all text-body-sm">
+<span class="material-symbols-outlined text-[18px]">upload_file</span>
+                    Import Media
+                </button>
+<button class="flex items-center gap-xs px-3 py-1 bg-surface-container-high hover:bg-surface-variant text-on-surface rounded border border-outline-variant transition-all text-body-sm">
+<span class="material-symbols-outlined text-[18px]">subtitles</span>
+                    Import Subtitle
+                </button>
+</div>
+<div class="flex items-center gap-lg">
+<div class="flex items-center gap-md text-on-surface-variant">
+<span class="material-symbols-outlined cursor-pointer hover:text-primary transition-all">memory</span>
+<span class="material-symbols-outlined cursor-pointer hover:text-primary transition-all">database</span>
+<span class="material-symbols-outlined cursor-pointer hover:text-primary transition-all">analytics</span>
+</div>
+<div class="flex items-center gap-sm">
+<button class="px-4 py-1.5 bg-secondary-container text-on-secondary-container hover:opacity-80 rounded-lg text-body-sm font-bold transition-all">
+                        Export All
+                    </button>
+<button class="px-4 py-1.5 bg-primary-container text-on-primary-container hover:opacity-90 rounded-lg text-body-sm font-bold transition-all">
+                        Start / Extract
+                    </button>
+</div>
+</div>
+</header>
+<!-- Editor Content (Grid Layout) -->
+<div class="flex-1 flex flex-col min-h-0 overflow-hidden">
+<!-- Top: Preview Area -->
+<div class="flex-1 flex min-h-0">
+<!-- Left: Video Player -->
+<div class="flex-[1.5] bg-surface-container-lowest flex flex-col relative group">
+<div class="absolute inset-0 flex items-center justify-center">
+<div class="relative w-full aspect-video max-w-4xl shadow-2xl bg-black">
+<img alt="Video Preview" class="w-full h-full object-cover opacity-60" data-alt="A cinematic 16:9 widescreen video still showcasing a misty mountain landscape during the golden hour. The soft light reflects off a tranquil lake in the foreground, creating a professional color-graded look. The scene is slightly dimmed to accommodate a crisp subtitle overlay in the bottom center. The overall mood is serene, technical, and high-production quality, consistent with a professional video editing environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB14Lrvv_zAylDjKATFqMI7CfAB0LfgADKNUc0wb3elN8Riu6VN_iNb4NhQxRNmtzpEz0XqjWrv_t4w4Qou75u-qVHgqfLKcGPjpIqPRVeNabW1s8hX9HBek9A4COLjbx-thB6DDd4BTCsb8guJWx4KeXoRZjNuufbxgh7NUJ1UgHY_ltcVXyxBYG_EJAFYqhobUk7eCfQ-f29ViNBjUpLj1_pQ-V_BCPUaxPOJaRAHZVPB7g5UdR4CmanGrExrfwpYxQtsQgEEyJ4"/>
+<!-- Subtitle Overlay -->
+<div class="absolute bottom-10 left-0 right-0 text-center px-12">
+<span class="bg-black/60 px-4 py-1.5 rounded text-h1 text-white border-b-2 border-primary-container">
+                                    The transition between the peaks was seamless.
+                                </span>
+</div>
+<!-- Floating Player UI -->
+<div class="absolute bottom-0 left-0 right-0 p-md bg-gradient-to-t from-black/80 to-transparent flex items-center gap-md opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-primary cursor-pointer" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+<span class="material-symbols-outlined text-on-surface cursor-pointer">skip_next</span>
+<div class="flex-1 h-1 bg-surface-variant rounded-full overflow-hidden">
+<div class="w-1/3 h-full bg-primary-container"></div>
+</div>
+<span class="text-mono text-body-sm text-on-surface">00:12:45 / 00:45:00</span>
+<span class="material-symbols-outlined text-on-surface cursor-pointer">volume_up</span>
+<span class="material-symbols-outlined text-on-surface cursor-pointer">fullscreen</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Right: Segment List (Quick Nav) -->
+<div class="w-[320px] bg-surface-container-low border-l border-outline-variant flex flex-col">
+<div class="p-md border-b border-outline-variant flex items-center justify-between">
+<span class="font-h2 text-h2 text-primary">Segments</span>
+<span class="text-body-sm text-on-surface-variant">156 total</span>
+</div>
+<div class="flex-1 overflow-y-auto custom-scrollbar">
+<!-- Active Segment -->
+<div class="p-3 border-b border-outline-variant/30 bg-secondary-container/20 border-l-4 border-l-primary-container cursor-pointer">
+<div class="flex justify-between text-body-sm text-on-surface-variant mb-1">
+<span class="text-primary-fixed-dim font-bold">#42</span>
+<span class="font-mono">00:12:44 - 00:12:48</span>
+</div>
+<p class="text-body-md text-on-surface line-clamp-2">The transition between the peaks was seamless.</p>
+</div>
+<!-- Inactive Segments -->
+<div class="p-3 border-b border-outline-variant/30 hover:bg-surface-variant/50 cursor-pointer transition-colors">
+<div class="flex justify-between text-body-sm text-on-surface-variant mb-1">
+<span class="font-bold">#43</span>
+<span class="font-mono">00:12:48 - 00:12:52</span>
+</div>
+<p class="text-body-md text-on-surface-variant line-clamp-2">Captured in stunning 8K resolution at dusk.</p>
+</div>
+<div class="p-3 border-b border-outline-variant/30 hover:bg-surface-variant/50 cursor-pointer transition-colors">
+<div class="flex justify-between text-body-sm text-on-surface-variant mb-1">
+<span class="font-bold">#44</span>
+<span class="font-mono">00:12:53 - 00:12:59</span>
+</div>
+<p class="text-body-md text-on-surface-variant line-clamp-2">Moving closer to the valley floor now.</p>
+</div>
+<!-- More dummy items -->
+<div class="p-3 border-b border-outline-variant/30 hover:bg-surface-variant/50 cursor-pointer transition-colors opacity-60">
+<div class="flex justify-between text-body-sm text-on-surface-variant mb-1">
+<span class="font-bold">#45</span>
+<span class="font-mono">00:13:02 - 00:13:06</span>
+</div>
+<p class="text-body-md text-on-surface-variant line-clamp-2">[Ambient Music Intensifies]</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Middle: Timeline Area -->
+<div class="h-24 bg-surface-container-high border-y border-outline-variant flex flex-col relative overflow-hidden">
+<!-- Time Ruler -->
+<div class="h-6 timeline-container border-b border-outline-variant/50 flex items-end px-2">
+<span class="text-[10px] text-on-surface-variant font-mono mr-10">00:12:30</span>
+<span class="text-[10px] text-on-surface-variant font-mono mr-10">00:12:40</span>
+<span class="text-[10px] text-primary font-mono mr-10">00:12:50</span>
+<span class="text-[10px] text-on-surface-variant font-mono mr-10">00:13:00</span>
+</div>
+<!-- Tracks -->
+<div class="flex-1 relative">
+<!-- Playhead -->
+<div class="absolute top-0 bottom-0 left-[40%] w-[1px] bg-primary-container z-20 shadow-[0_0_10px_rgba(255,165,0,0.5)]">
+<div class="absolute -top-1 -left-1 w-2.5 h-2.5 bg-primary-container rotate-45"></div>
+</div>
+<!-- Subtitle Blocks -->
+<div class="absolute top-2 left-[5%] w-[15%] h-8 bg-surface-container rounded-sm border border-outline-variant/40 flex items-center px-2 text-[10px] text-on-surface-variant truncate">
+                        Captured in stunning 8K...
+                    </div>
+<div class="absolute top-2 left-[25%] w-[12%] h-8 bg-primary-container/20 rounded-sm border border-primary-container flex items-center px-2 text-[10px] text-primary-fixed-dim font-bold truncate">
+                        The transition between...
+                    </div>
+<div class="absolute top-2 left-[42%] w-[18%] h-8 bg-surface-container rounded-sm border border-outline-variant/40 flex items-center px-2 text-[10px] text-on-surface-variant truncate">
+                        Moving closer to the valley...
+                    </div>
+<div class="absolute top-2 left-[65%] w-[8%] h-8 bg-surface-variant/40 rounded-sm border border-outline-variant/20 flex items-center px-2 text-[10px] text-on-surface-variant italic truncate">
+                        [Ambient Music]
+                    </div>
+</div>
+</div>
+<!-- Bottom: Split Text Editor -->
+<div class="h-[280px] bg-surface flex flex-col shrink-0">
+<div class="flex flex-1">
+<!-- Original Text Pane -->
+<div class="flex-1 border-r border-outline-variant flex flex-col">
+<div class="h-8 px-md bg-surface-container-high flex items-center justify-between border-b border-outline-variant">
+<span class="text-label-caps text-on-surface-variant uppercase tracking-widest">Original (English)</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant cursor-pointer">more_vert</span>
+</div>
+<textarea class="flex-1 bg-transparent p-md text-h1 text-on-surface focus:ring-0 border-none resize-none custom-scrollbar">The transition between the peaks was seamless, showing the sheer power of the weather patterns.</textarea>
+</div>
+<!-- Translation Text Pane -->
+<div class="flex-1 flex flex-col">
+<div class="h-8 px-md bg-surface-container-high flex items-center justify-between border-b border-outline-variant">
+<span class="text-label-caps text-primary-container uppercase tracking-widest">Translation (French)</span>
+<div class="flex gap-sm">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant cursor-pointer hover:text-primary">auto_fix_high</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant cursor-pointer hover:text-primary">spellcheck</span>
+</div>
+</div>
+<textarea class="flex-1 bg-surface-container p-md text-h1 text-primary-fixed-dim focus:ring-1 focus:ring-primary-container border-none resize-none custom-scrollbar">La transition entre les sommets était fluide, montrant la puissance pure des modèles météorologiques.</textarea>
+</div>
+</div>
+<!-- Segment Metadata / Actions -->
+<div class="h-12 border-t border-outline-variant bg-surface-container-low px-lg flex items-center justify-between">
+<div class="flex items-center gap-xl text-body-sm text-on-surface-variant">
+<div class="flex items-center gap-sm">
+<span class="text-label-caps">Start:</span>
+<input class="w-24 bg-surface-variant border-none rounded py-0.5 px-2 text-mono text-on-surface text-center" type="text" value="00:12:44.22"/>
+</div>
+<div class="flex items-center gap-sm">
+<span class="text-label-caps">End:</span>
+<input class="w-24 bg-surface-variant border-none rounded py-0.5 px-2 text-mono text-on-surface text-center" type="text" value="00:12:48.05"/>
+</div>
+<div class="flex items-center gap-sm">
+<span class="text-label-caps">Duration:</span>
+<span class="text-mono text-primary">03.83s</span>
+</div>
+<div class="flex items-center gap-sm">
+<span class="text-label-caps">CPS:</span>
+<span class="text-mono text-primary">12.4</span>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<button class="p-2 hover:bg-surface-variant rounded text-on-surface-variant transition-colors" title="Merge with previous">
+<span class="material-symbols-outlined">call_merge</span>
+</button>
+<button class="p-2 hover:bg-surface-variant rounded text-on-surface-variant transition-colors" title="Split segment">
+<span class="material-symbols-outlined">call_split</span>
+</button>
+<div class="w-[1px] h-4 bg-outline-variant mx-2"></div>
+<button class="px-4 py-1.5 bg-on-surface-variant text-surface rounded hover:opacity-80 transition-all font-bold text-body-sm">
+                            Next Segment
+                        </button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<script>
+        // Micro-interaction for timeline scrolling or segment clicking
+        document.addEventListener('DOMContentLoaded', () => {
+            const textareas = document.querySelectorAll('textarea');
+            textareas.forEach(ta => {
+                ta.addEventListener('focus', () => {
+                    ta.parentElement.classList.add('ring-1', 'ring-primary-container/30');
+                });
+                ta.addEventListener('blur', () => {
+                    ta.parentElement.classList.remove('ring-1', 'ring-primary-container/30');
+                });
+            });
+
+            // Simulate timeline scrubbing
+            const playhead = document.querySelector('.timeline-container').parentElement.querySelector('.bg-primary-container.z-20');
+            // This is just a visual placeholder for interactivity
+        });
+    </script>
+</body></html>

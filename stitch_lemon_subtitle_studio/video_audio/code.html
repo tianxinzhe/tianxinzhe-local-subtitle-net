@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Lemon Subtitle Studio - Video to Audio</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Slim Ghost Scrollbar */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #534433; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a18e79; }
+        
+        .glass-panel {
+            background: rgba(30, 30, 50, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(83, 68, 51, 0.3);
+        }
+
+        .zebra-stripe:nth-child(even) {
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+
+        @keyframes wave-pulse {
+            0% { height: 20%; }
+            50% { height: 80%; }
+            100% { height: 20%; }
+        }
+        .wave-bar {
+            animation: wave-pulse 1.2s ease-in-out infinite;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-fixed": "#001f2a",
+                        "primary-fixed-dim": "#ffb95c",
+                        "outline-variant": "#534433",
+                        "background": "#111125",
+                        "tertiary-fixed-dim": "#6bd3ff",
+                        "primary-fixed": "#ffddb7",
+                        "on-secondary": "#09305c",
+                        "secondary-fixed-dim": "#a9c8fc",
+                        "on-background": "#e2e0fc",
+                        "secondary": "#a9c8fc",
+                        "surface-dim": "#111125",
+                        "on-secondary-fixed": "#001b3c",
+                        "on-primary-fixed-variant": "#653e00",
+                        "on-tertiary-fixed-variant": "#004d65",
+                        "surface": "#111125",
+                        "on-surface-variant": "#d9c3ac",
+                        "surface-container-high": "#28283d",
+                        "outline": "#a18e79",
+                        "inverse-on-surface": "#2f2e43",
+                        "primary-container": "#ffa500",
+                        "inverse-primary": "#855400",
+                        "surface-variant": "#333348",
+                        "primary": "#ffcb8c",
+                        "surface-container-highest": "#333348",
+                        "surface-bright": "#37374d",
+                        "surface-container": "#1e1e32",
+                        "on-primary-container": "#684000",
+                        "tertiary-fixed": "#bee9ff",
+                        "on-tertiary": "#003546",
+                        "surface-tint": "#ffb95c",
+                        "surface-container-lowest": "#0c0c1f",
+                        "inverse-surface": "#e2e0fc",
+                        "tertiary": "#98ddff",
+                        "error-container": "#93000a",
+                        "on-error": "#690005",
+                        "on-error-container": "#ffdad6",
+                        "secondary-container": "#294a77",
+                        "surface-container-low": "#1a1a2e",
+                        "on-primary": "#462a00",
+                        "on-primary-fixed": "#2a1700",
+                        "error": "#ffb4ab",
+                        "on-secondary-fixed-variant": "#274774",
+                        "tertiary-container": "#02c7ff",
+                        "secondary-fixed": "#d5e3ff",
+                        "on-tertiary-container": "#004f68",
+                        "on-secondary-container": "#9bbaee",
+                        "on-surface": "#e2e0fc"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "sidebar_width": "240px",
+                        "unit": "4px",
+                        "xs": "4px",
+                        "md": "16px",
+                        "lg": "24px",
+                        "header_height": "56px",
+                        "xl": "32px",
+                        "sm": "8px"
+                    },
+                    "fontFamily": {
+                        "h2": ["Segoe UI"],
+                        "body-md": ["Segoe UI"],
+                        "mono": ["Cascadia Code"],
+                        "label-caps": ["Segoe UI"],
+                        "h1": ["Segoe UI"],
+                        "body-sm": ["Segoe UI"]
+                    },
+                    "fontSize": {
+                        "h2": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "mono": ["13px", {"lineHeight": "18px", "fontWeight": "400"}],
+                        "label-caps": ["11px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                        "h1": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background font-body-md selection:bg-primary-container selection:text-on-primary-container overflow-hidden">
+<!-- SIDEBAR -->
+<aside class="fixed left-0 top-0 h-full w-[240px] bg-surface-container-low border-r border-outline-variant flex flex-col p-md z-50">
+<div class="mb-lg">
+<h1 class="font-h1 text-h1 text-primary-container font-bold tracking-tight">Lemon Subtitle Studio</h1>
+<p class="font-body-sm text-on-surface-variant opacity-70">GPU: Active • CPU: 12%</p>
+</div>
+<nav class="flex-1 flex flex-col gap-xs">
+<!-- Nav Items based on JSON -->
+<a class="flex items-center gap-md p-sm text-on-surface-variant hover:bg-surface-variant rounded-lg transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="closed_caption">closed_caption</span>
+<span class="font-body-md">Video → Subtitle</span>
+</a>
+<a class="flex items-center gap-md p-sm text-primary-fixed-dim bg-secondary-container rounded-lg font-bold transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="movie">movie</span>
+<span class="font-body-md">Video → Audio</span>
+</a>
+<a class="flex items-center gap-md p-sm text-on-surface-variant hover:bg-surface-variant rounded-lg transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="audiotrack">audiotrack</span>
+<span class="font-body-md">Audio → Subtitle</span>
+</a>
+<a class="flex items-center gap-md p-sm text-on-surface-variant hover:bg-surface-variant rounded-lg transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="translate">translate</span>
+<span class="font-body-md">Subtitle Translation</span>
+</a>
+<a class="flex items-center gap-md p-sm text-on-surface-variant hover:bg-surface-variant rounded-lg transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="edit_note">edit_note</span>
+<span class="font-body-md">Subtitle Editor</span>
+</a>
+<a class="flex items-center gap-md p-sm text-on-surface-variant hover:bg-surface-variant rounded-lg transition-colors duration-200 mt-auto" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-body-md">Settings</span>
+</a>
+</nav>
+<div class="mt-md pt-md border-t border-outline-variant flex flex-col gap-sm">
+<button class="bg-primary text-on-primary p-sm rounded font-bold text-body-sm hover:opacity-90 active:scale-[0.98] transition-all">
+                Check for Updates
+            </button>
+<div class="flex items-center justify-between px-xs opacity-60 text-body-sm">
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px]" data-icon="language">language</span>
+<span>Language</span>
+</div>
+<span>v2.4.0</span>
+</div>
+</div>
+</aside>
+<!-- TOP BAR -->
+<header class="fixed top-0 left-[240px] right-0 h-header_height bg-surface border-b border-outline-variant flex justify-between items-center px-lg z-40">
+<div class="flex items-center gap-lg">
+<h2 class="font-h1 text-h1 text-primary-fixed-dim">Video → Audio</h2>
+<div class="flex items-center gap-md text-on-surface-variant font-body-sm bg-surface-container-high px-md py-xs rounded-full">
+<span>2 files</span>
+<span class="w-[1px] h-3 bg-outline-variant"></span>
+<span>Memory: 128MB</span>
+<span class="w-[1px] h-3 bg-outline-variant"></span>
+<span>CPU: 5%</span>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<div class="flex items-center gap-xs mr-md text-on-surface-variant">
+<button class="p-xs hover:text-primary transition-all active:opacity-70">
+<span class="material-symbols-outlined" data-icon="memory">memory</span>
+</button>
+<button class="p-xs hover:text-primary transition-all active:opacity-70">
+<span class="material-symbols-outlined" data-icon="database">database</span>
+</button>
+<button class="p-xs hover:text-primary transition-all active:opacity-70">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+</button>
+</div>
+<button class="border border-outline-variant text-on-surface px-md py-sm rounded text-body-sm hover:bg-surface-variant transition-all">
+                Export All
+            </button>
+<button class="bg-primary-container text-on-primary-container px-md py-sm rounded font-bold text-body-sm hover:opacity-90 active:scale-[0.99] transition-all">
+                Start / Extract
+            </button>
+</div>
+</header>
+<!-- MAIN CANVAS -->
+<main class="ml-[240px] mt-header_height h-[calc(100vh-56px)] flex flex-col">
+<!-- CONFIG BAR -->
+<section class="h-14 bg-surface-container-low px-lg flex items-center gap-xl border-b border-outline-variant">
+<div class="flex items-center gap-md">
+<span class="font-label-caps text-on-surface-variant">FORMAT</span>
+<select class="bg-surface-variant text-on-surface border-none rounded text-body-sm py-1 px-sm focus:ring-1 focus:ring-primary">
+<option>WAV (Lossless)</option>
+<option selected="">MP3 (Standard)</option>
+<option>FLAC</option>
+<option>AAC</option>
+</select>
+</div>
+<div class="flex items-center gap-md flex-1 max-w-sm">
+<span class="font-label-caps text-on-surface-variant">BITRATE</span>
+<input class="w-full h-1 bg-surface-variant rounded-lg appearance-none cursor-pointer accent-primary" max="320" min="64" type="range" value="320"/>
+<span class="font-mono text-body-sm text-primary">320kbps</span>
+</div>
+<div class="flex items-center gap-md flex-1">
+<span class="font-label-caps text-on-surface-variant whitespace-nowrap">OUTPUT DIR</span>
+<div class="flex-1 flex items-center bg-surface-container-high rounded px-sm py-1 border border-outline-variant group cursor-pointer hover:border-primary transition-colors">
+<span class="font-mono text-body-sm truncate text-on-surface-variant">C:/Users/Studio/Exports/Audio/Project_Alpha/</span>
+<span class="material-symbols-outlined text-[18px] ml-auto text-primary" data-icon="folder_open">folder_open</span>
+</div>
+</div>
+</section>
+<!-- WORKSPACE (Split Pane) -->
+<div class="flex-1 flex overflow-hidden">
+<!-- LEFT PANEL (File Queue) -->
+<section class="w-[35%] border-r border-outline-variant flex flex-col bg-surface-container-lowest">
+<div class="p-md border-b border-outline-variant flex justify-between items-center bg-surface-container-low">
+<span class="font-h2 text-h2">Extraction Queue</span>
+<span class="text-xs bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded-full">2 Pending</span>
+</div>
+<div class="flex-1 overflow-y-auto">
+<!-- File Item 1 -->
+<div class="p-md zebra-stripe flex flex-col gap-sm border-b border-outline-variant/30">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary" data-icon="video_file">video_file</span>
+<div>
+<p class="font-body-md font-bold truncate w-48 text-on-surface">Marketing_Intro_Final_4K.mp4</p>
+<p class="text-[10px] text-on-surface-variant font-mono">Size: 1.2GB • Dur: 02:45</p>
+</div>
+</div>
+<span class="text-primary font-mono text-xs">74%</span>
+</div>
+<div class="w-full bg-surface-variant h-1 rounded-full overflow-hidden">
+<div class="bg-primary h-full transition-all duration-500" style="width: 74%"></div>
+</div>
+<div class="flex justify-between text-[10px] font-mono text-on-surface-variant">
+<span>Converting to MP3...</span>
+<span>Remaining: 12s</span>
+</div>
+</div>
+<!-- File Item 2 -->
+<div class="p-md zebra-stripe flex flex-col gap-sm border-b border-outline-variant/30 opacity-80">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="video_file">video_file</span>
+<div>
+<p class="font-body-md truncate w-48 text-on-surface">Interview_Draft_Raw.mov</p>
+<p class="text-[10px] text-on-surface-variant font-mono">Size: 450MB • Dur: 15:20</p>
+</div>
+</div>
+<span class="text-on-surface-variant font-mono text-xs">Queued</span>
+</div>
+<div class="w-full bg-surface-variant h-1 rounded-full"></div>
+<div class="flex justify-between text-[10px] font-mono text-on-surface-variant">
+<span>Waiting for process...</span>
+<span>Est: 45s</span>
+</div>
+</div>
+</div>
+</section>
+<!-- RIGHT PANEL (Preview/Details) -->
+<section class="flex-1 flex flex-col bg-background relative">
+<!-- Large Waveform Visualization -->
+<div class="flex-1 flex flex-col items-center justify-center p-xl">
+<div class="w-full h-48 glass-panel rounded-xl flex items-center justify-center gap-1 px-md relative overflow-hidden">
+<!-- Abstract Waveform Bars -->
+<div class="absolute inset-0 opacity-10 pointer-events-none">
+
+</div>
+<div class="flex items-center gap-[2px] h-32 w-full justify-center">
+<script>
+                                document.write(Array.from({length: 60}).map((_, i) => {
+                                    const h = Math.random() * 80 + 10;
+                                    const delay = Math.random() * 2;
+                                    return `<div class="wave-bar w-[4px] bg-primary-container rounded-full" style="height: ${h}%; animation-delay: -${delay}s; opacity: ${0.4 + (Math.random() * 0.6)}"></div>`;
+                                }).join(''));
+                            </script>
+</div>
+</div>
+<!-- Playback Controls -->
+<div class="mt-xl flex flex-col items-center gap-lg w-full max-w-md">
+<div class="flex items-center gap-xl">
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-all text-h1" data-icon="skip_previous">skip_previous</button>
+<button class="bg-primary text-on-primary w-14 h-14 rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined text-[32px]" data-icon="play_arrow" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-all text-h1" data-icon="skip_next">skip_next</button>
+</div>
+<div class="w-full flex items-center gap-md text-mono text-body-sm text-on-surface-variant">
+<span>01:12</span>
+<div class="flex-1 bg-surface-container-high h-1 rounded-full relative overflow-hidden">
+<div class="bg-primary-fixed-dim h-full" style="width: 45%"></div>
+</div>
+<span>02:45</span>
+</div>
+</div>
+</div>
+<!-- EXTRACTION LOG -->
+<div class="h-40 border-t border-outline-variant bg-surface-container-lowest p-md font-mono text-[12px] flex flex-col">
+<div class="flex items-center justify-between mb-sm border-b border-outline-variant/30 pb-xs">
+<span class="text-on-surface-variant font-label-caps">EXTRACTION LOG</span>
+<div class="flex gap-md">
+<span class="text-primary">0 ERRORS</span>
+<span class="text-tertiary">2 WARNINGS</span>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto text-on-surface-variant/80 space-y-1">
+<p><span class="text-primary-fixed-dim">[10:42:01]</span> Initializing FFmpeg core v5.1.2-Lemon...</p>
+<p><span class="text-primary-fixed-dim">[10:42:02]</span> Loading stream #0:0 (video: h264), #0:1 (audio: aac)...</p>
+<p><span class="text-primary-fixed-dim">[10:42:04]</span> Mapping audio stream #0:1 to output pipe...</p>
+<p><span class="text-tertiary">[10:42:15]</span> <span class="bg-tertiary/10 px-1">WARN</span> Bitrate clipping detected at 2:15. Adjusting gain -1.2dB.</p>
+<p><span class="text-primary-fixed-dim">[10:42:18]</span> Extracting block 450/1200... (74%)</p>
+<p class="animate-pulse">_</p>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Contextual FAB Suppression: No FAB on this detailed functional screen -->
+<script>
+        // Micro-interactions for buttons
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                let ripple = document.createElement('span');
+                ripple.classList.add('ripple');
+                this.appendChild(ripple);
+                setTimeout(() => ripple.remove(), 600);
+            });
+        });
+
+        // Simple Waveform playback simulation
+        const bars = document.querySelectorAll('.wave-bar');
+        let playing = false;
+        
+        document.querySelector('[data-icon="play_arrow"]').parentElement.addEventListener('click', function() {
+            playing = !playing;
+            this.querySelector('span').textContent = playing ? 'pause' : 'play_arrow';
+            bars.forEach(bar => {
+                bar.style.animationPlayState = playing ? 'running' : 'paused';
+            });
+        });
+
+        // Initialize state
+        bars.forEach(bar => bar.style.animationPlayState = 'paused');
+    </script>
+</body></html>

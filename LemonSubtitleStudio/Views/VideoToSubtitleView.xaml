@@ -1,0 +1,124 @@
+
+<UserControl x:Class="LemonSubtitleStudio.Views.VideoToSubtitleView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:viewModels="clr-namespace:LemonSubtitleStudio.ViewModels"
+             xmlns:models="clr-namespace:LemonSubtitleStudio.Models">
+    <UserControl.DataContext>
+        <viewModels:VideoToSubtitleViewModel />
+    </UserControl.DataContext>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="60" />
+            <RowDefinition Height="50" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="40" />
+        </Grid.RowDefinitions>
+        <Grid Grid.Row="0" Background="#1A1A2E" Margin="8">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                <TextBlock Text="视频转字幕" FontSize="18" FontWeight="Bold" Foreground="White" Margin="0,0,16,0" />
+                <TextBlock Text="[" Foreground="#FFA500" />
+                <TextBlock Text="{Binding Tasks.Count}" Foreground="#FFA500" />
+                <TextBlock Text="个文件]" Foreground="#FFA500" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <TextBlock Text="内存: " Foreground="#A0A0B0" Margin="0,0,8,0" />
+                <TextBlock Text="{Binding MemoryUsage}" Foreground="#00C853" Margin="0,0,16,0" />
+                <TextBlock Text="CPU: " Foreground="#A0A0B0" Margin="0,0,8,0" />
+                <TextBlock Text="{Binding CpuUsage}" Foreground="#FFA500" Margin="0,0,16,0" />
+                <Button Content="导出全部" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding ExportAllCommand}" Margin="0,0,8,0" />
+                <Button Content="开始处理" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding StartProcessingCommand}" />
+            </StackPanel>
+        </Grid>
+        <Grid Grid.Row="1" Background="#16213E" Margin="8">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                <ComboBox ItemsSource="{Binding Languages}" SelectedItem="{Binding SelectedLanguage}" Width="120" Style="{StaticResource ComboBoxStyle}" Margin="0,0,16,0" />
+                <ComboBox ItemsSource="{Binding ProcessingModes}" SelectedItem="{Binding SelectedProcessingMode}" Width="120" Style="{StaticResource ComboBoxStyle}" Margin="0,0,16,0" />
+                <ComboBox ItemsSource="{Binding Models}" SelectedItem="{Binding SelectedModel}" Width="120" Style="{StaticResource ComboBoxStyle}" Margin="0,0,16,0" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <TextBlock Text="输出目录:" Foreground="#A0A0B0" Margin="0,0,8,0" />
+                <TextBox Text="{Binding OutputDirectory}" Width="200" Style="{StaticResource TextBoxStyle}" Margin="0,0,8,0" />
+                <Button Content="浏览" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding BrowseOutputDirectoryCommand}" />
+            </StackPanel>
+        </Grid>
+        <Grid Grid.Row="2" Margin="8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="320" MinWidth="200" MaxWidth="400" />
+                <ColumnDefinition Width="4" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Grid Grid.Column="0" Background="#16213E">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="100" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <Border Grid.Row="0" BorderBrush="#2A2A4A" BorderThickness="2" CornerRadius="8" Margin="8" 
+                        Background="#0F3460" AllowDrop="True" Drop="DropHandler">
+                    <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <TextBlock Text="📁" FontSize="24" Margin="0,0,0,8" />
+                        <TextBlock Text="拖拽视频文件到这里" Foreground="#A0A0B0" />
+                        <TextBlock Text="或点击选择" Foreground="#505060" FontSize="12" />
+                    </StackPanel>
+                </Border>
+                <ListBox Grid.Row="1" ItemsSource="{Binding Tasks}" Margin="8" Background="Transparent">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Border Background="#1A1A2E" CornerRadius="4" Margin="2" Padding="8">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding FileName}" Foreground="White" Width="200" TextTrimming="CharacterEllipsis" />
+                                    <ProgressBar Value="{Binding Progress}" Width="60" Height="12" Margin="8,0,8,0" Style="{StaticResource ProgressBarStyle}" />
+                                    <TextBlock Text="{Binding Status, Converter={StaticResource TaskStatusConverter}}" 
+                                               Foreground="{Binding Status, Converter={StaticResource StatusColorConverter}}" />
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Grid>
+            <GridSplitter Grid.Column="1" Width="4" Background="#2A2A4A" ResizeDirection="Columns" />
+            <Grid Grid.Column="2">
+                <TabControl>
+                    <TabItem Header="视频预览">
+                        <MediaElement x:Name="VideoPlayer" Stretch="Uniform" LoadedBehavior="Manual" />
+                    </TabItem>
+                    <TabItem Header="字幕列表">
+                        <DataGrid ItemsSource="{Binding Subtitles}" AutoGenerateColumns="False" Style="{StaticResource DataGridStyle}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="序号" Binding="{Binding Index}" />
+                                <DataGridTextColumn Header="开始时间" Binding="{Binding StartTimeFormatted}" />
+                                <DataGridTextColumn Header="结束时间" Binding="{Binding EndTimeFormatted}" />
+                                <DataGridTextColumn Header="原文" Binding="{Binding OriginalText}" Width="*" />
+                                <DataGridTemplateColumn Header="操作">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Content="编辑" Command="{Binding DataContext.EditSubtitleCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </TabItem>
+                    <TabItem Header="任务进度">
+                        <StackPanel>
+                            <ProgressBar Value="{Binding OverallProgress}" Height="20" Style="{StaticResource ProgressBarStyle}" />
+                            <TextBlock Text="{Binding CurrentTaskInfo}" Foreground="#A0A0B0" Margin="8" />
+                        </StackPanel>
+                    </TabItem>
+                    <TabItem Header="处理日志">
+                        <ListBox ItemsSource="{Binding Logs}" Background="#1A1A2E">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding}" Foreground="#A0A0B0" FontSize="12" />
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </TabItem>
+                </TabControl>
+            </Grid>
+        </Grid>
+        <Grid Grid.Row="3" Background="#16213E" Margin="8">
+            <Button Content="清空队列" Command="{Binding ClearQueueCommand}" Style="{StaticResource SecondaryButtonStyle}" />
+        </Grid>
+    </Grid>
+</UserControl>
