@@ -1,4 +1,8 @@
 
+using System;
+using System.Collections.ObjectModel;
+using System.Threading;
+using System.Threading.Tasks;
 using LemonSubtitleStudio.Models;
 
 namespace LemonSubtitleStudio.Services
@@ -9,7 +13,7 @@ namespace LemonSubtitleStudio.Services
         void AddTask(TaskItem task);
         void RemoveTask(TaskItem task);
         void ClearAll();
-        Task ExecuteTasksAsync(CancellationToken cancellationToken);
+        Task ExecuteTasksAsync(Func<TaskItem, CancellationToken, Task> processTask, CancellationToken cancellationToken);
         event EventHandler<TaskCompletedEventArgs> TaskCompleted;
     }
 }

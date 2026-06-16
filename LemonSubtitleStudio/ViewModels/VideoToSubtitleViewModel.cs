@@ -1,18 +1,27 @@
-
 using Prism.Commands;
+using Prism.Regions;
 using LemonSubtitleStudio.Models;
 using LemonSubtitleStudio.Services;
+using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.IO;
+using System.Linq;
+using TaskStatusEnum = LemonSubtitleStudio.Models.TaskStatus;
 
 namespace LemonSubtitleStudio.ViewModels
 {
-    public class VideoToSubtitleViewModel : INotifyPropertyChanged
+    public class VideoToSubtitleViewModel : INotifyPropertyChanged, INavigationAware
     {
         private readonly IFileService _fileService;
-        private readonly ITaskQueueService _taskQueueService;
+        private readonly IAudioService _audioService;
+        private readonly ITranscriptionService _transcriptionService;
+        private readonly ISubtitleService _subtitleService;
         private readonly ILoggingService _loggingService;
         private readonly ISettingsService _settingsService;
+        private readonly IRegionManager _regionManager;
+        private readonly IHistoryService _historyService;
 
         public ObservableCollection<TaskItem> Tasks { get; } = new ObservableCollection<TaskItem>();
         public ObservableCollection<SubtitleItem> Subtitles { get; } = new ObservableCollection<SubtitleItem>();
@@ -20,7 +29,7 @@ namespace LemonSubtitleStudio.ViewModels
 
         public List<string> Languages { get; } = new List<string> { "中文", "English", "日本語", "한국어" };
         public List<string> ProcessingModes { get; } = new List<string> { "高精度", "快速" };
-        public List<string> Models { get; } = new List<string> { "tiny", "base", "small", "medium", "large" };
+        public List<string> AvailableModels { get; } = new List<string> { "tiny", "base", "small", "medium" };
 
         private string _selectedLanguage = "中文";
         public string SelectedLanguage
@@ -78,28 +87,46 @@ namespace LemonSubtitleStudio.ViewModels
             set { _currentTaskInfo = value; OnPropertyChanged(); }
         }
 
+        private string _selectedMediaPath = string.Empty;
+        public string SelectedMediaPath
+        {
+            get => _selectedMediaPath;
+            set { _selectedMediaPath = value; OnPropertyChanged(); }
+        }
+
         public DelegateCommand BrowseOutputDirectoryCommand { get; }
         public DelegateCommand StartProcessingCommand { get; }
         public DelegateCommand ExportAllCommand { get; }
         public DelegateCommand ClearQueueCommand { get; }
         public DelegateCommand<SubtitleItem> EditSubtitleCommand { get; }
         public DelegateCommand AddFilesCommand { get; }
+        public DelegateCommand SelectFileCommand { get; }
+        public DelegateCommand<TaskItem> PreviewVideoCommand { get; }
 
-        public VideoToSubtitleViewModel()
+        public VideoToSubtitleViewModel(IFileService fileService, IAudioService audioService,
+            ITranscriptionService transcriptionService, ISubtitleService subtitleService,
+            ILoggingService loggingService, ISettingsService settingsService,
+            IRegionManager regionManager, IHistoryService historyService)
         {
-            _fileService = new FileService();
-            _taskQueueService = new TaskQueueService();
-            _loggingService = new LoggingService();
-            _settingsService = new SettingsService();
+            _fileService = fileService;
+            _audioService = audioService;
+            _transcriptionService = transcriptionService;
+            _subtitleService = subtitleService;
+            _loggingService = loggingService;
+            _settingsService = settingsService;
+            _regionManager = regionManager;
+            _historyService = historyService;
 
             OutputDirectory = _settingsService.DefaultOutputDirectory;
 
             BrowseOutputDirectoryCommand = new DelegateCommand(BrowseOutputDirectory);
-            StartProcessingCommand = new DelegateCommand(StartProcessing);
+            StartProcessingCommand = new DelegateCommand(async () => await StartProcessing());
             ExportAllCommand = new DelegateCommand(ExportAll);
             ClearQueueCommand = new DelegateCommand(ClearQueue);
             EditSubtitleCommand = new DelegateCommand<SubtitleItem>(EditSubtitle);
             AddFilesCommand = new DelegateCommand(AddFiles);
+            SelectFileCommand = new DelegateCommand(AddFiles);
+            PreviewVideoCommand = new DelegateCommand<TaskItem>(PreviewVideo);
 
             _loggingService.LogAdded += (s, e) => Logs.Add(e);
             _loggingService.Log("视频转字幕页面已加载");
@@ -112,14 +139,19 @@ namespace LemonSubtitleStudio.ViewModels
                 OutputDirectory = folder;
         }
 
-        private async void StartProcessing()
+        private async System.Threading.Tasks.Task StartProcessing()
         {
             if (Tasks.Count == 0) return;
+            if (!_audioService.IsFfmpegAvailable())
+            {
+                _loggingService.LogError("FFmpeg 不可用，请确保已正确安装");
+                return;
+            }
 
             _loggingService.Log("开始处理任务...");
             foreach (var task in Tasks)
             {
-                task.Status = TaskStatus.Processing;
+                task.Status = TaskStatusEnum.Processing;
                 task.Progress = 0;
             }
 
@@ -128,15 +160,61 @@ namespace LemonSubtitleStudio.ViewModels
                 CurrentTaskInfo = $"正在处理: {task.FileName}";
                 _loggingService.Log($"处理文件: {task.FileName}");
 
-                for (int i = 0; i <= 100; i += 10)
+                try
                 {
-                    task.Progress = i;
-                    OverallProgress = (int)((Tasks.IndexOf(task) * 100 + i) / Tasks.Count);
-                    await Task.Delay(200);
+                    task.Progress = 0;
+                    task.Status = TaskStatusEnum.Processing;
+                    CurrentTaskInfo = $"提取音频: {task.FileName}";
+                    _loggingService.Log("阶段1/3: 提取音频");
+
+                    var wavPath = await _audioService.ConvertToWavAsync(task.InputPath, OutputDirectory);
+                    task.Progress = 33;
+
+                    CurrentTaskInfo = $"语音识别: {task.FileName}";
+                    _loggingService.Log("阶段2/3: 语音识别");
+
+                    var progress = new Progress<int>(p =>
+                    {
+                        System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            task.Progress = 33 + (int)(p * 0.66);
+                            OverallProgress = (int)((Tasks.IndexOf(task) * 100 + task.Progress) / Tasks.Count);
+                        });
+                    });
+
+                    var subtitles = await _transcriptionService.TranscribeAsync(
+                        wavPath, SelectedLanguage, SelectedModel, progress);
+                    
+                    Subtitles.Clear();
+                    foreach (var sub in subtitles)
+                    {
+                        Subtitles.Add(sub);
+                    }
+
+                    task.Progress = 100;
+
+                    var srtPath = Path.Combine(OutputDirectory, $"{Path.GetFileNameWithoutExtension(task.InputPath)}.srt");
+                    _subtitleService.SaveToSrt(srtPath, subtitles);
+                    task.OutputPath = srtPath;
+                    task.MediaPath = task.InputPath;
+
+                    task.Status = TaskStatusEnum.Completed;
+                    _loggingService.Log($"完成: {task.FileName} -> {srtPath}");
+
+                    await _historyService.AddRecordAsync(task.InputPath, srtPath, TaskStatusEnum.Completed, string.Empty, DateTime.Now);
+
+                    File.Delete(wavPath);
+                }
+                catch (Exception ex)
+                {
+                    task.Status = TaskStatusEnum.Failed;
+                    task.ErrorMessage = ex.Message;
+                    _loggingService.LogError($"处理失败: {task.FileName}", ex);
+
+                    await _historyService.AddRecordAsync(task.InputPath, string.Empty, TaskStatusEnum.Failed, ex.Message, DateTime.Now);
                 }
 
-                task.Status = TaskStatus.Completed;
-                _loggingService.Log($"完成: {task.FileName}");
+                OverallProgress = (Tasks.IndexOf(task) + 1) * 100 / Tasks.Count;
             }
 
             CurrentTaskInfo = "所有任务已完成";
@@ -145,18 +223,44 @@ namespace LemonSubtitleStudio.ViewModels
 
         private void ExportAll()
         {
-            _loggingService.Log("导出所有字幕");
+            foreach (var task in Tasks)
+            {
+                if (task.Status == TaskStatusEnum.Completed && !string.IsNullOrEmpty(task.OutputPath))
+                {
+                    _fileService.EnsureDirectoryExists(OutputDirectory);
+                    _loggingService.Log($"导出字幕: {task.OutputPath}");
+                }
+            }
         }
 
         private void ClearQueue()
         {
             Tasks.Clear();
+            Subtitles.Clear();
             _loggingService.Log("队列已清空");
         }
 
         private void EditSubtitle(SubtitleItem subtitle)
         {
-            _loggingService.Log($"编辑字幕: {subtitle.Index}");
+            var completedTask = Tasks.FirstOrDefault(t => t.Status == TaskStatusEnum.Completed);
+            if (completedTask == null)
+            {
+                _loggingService.LogWarning("没有已完成的任务，无法编辑字幕");
+                return;
+            }
+
+            var navigationParams = new NavigationParameters();
+            navigationParams.Add("MediaPath", SelectedMediaPath);
+            navigationParams.Add("SubtitlePath", completedTask.OutputPath);
+            _regionManager.RequestNavigate("ContentRegion", "SubtitleEditorView", navigationParams);
+        }
+
+        private void PreviewVideo(TaskItem task)
+        {
+            if (task.Status == TaskStatusEnum.Completed)
+            {
+                SelectedMediaPath = task.InputPath;
+            }
         }
 
         private void AddFiles()
@@ -168,7 +272,7 @@ namespace LemonSubtitleStudio.ViewModels
                 {
                     InputPath = file,
                     FileName = System.IO.Path.GetFileName(file),
-                    Status = TaskStatus.Waiting
+                    Status = TaskStatusEnum.Waiting
                 });
             }
             _loggingService.Log($"添加了 {files.Length} 个文件");
@@ -188,13 +292,19 @@ namespace LemonSubtitleStudio.ViewModels
                         {
                             InputPath = file,
                             FileName = System.IO.Path.GetFileName(file),
-                            Status = TaskStatus.Waiting
+                            Status = TaskStatusEnum.Waiting
                         });
                     }
                 }
                 _loggingService.Log($"拖拽添加了 {files.Length} 个文件");
             }
         }
+
+        public void OnNavigatedTo(NavigationContext navigationContext) { }
+
+        public void OnNavigatedFrom(NavigationContext navigationContext) { }
+
+        public bool IsNavigationTarget(NavigationContext navigationContext) => true;
 
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged(string propertyName = null)

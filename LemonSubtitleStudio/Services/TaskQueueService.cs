@@ -1,6 +1,8 @@
 
-using LemonSubtitleStudio.Models;
+using System;
 using System.Collections.ObjectModel;
+using System.Threading;
+using LemonSubtitleStudio.Models;
 
 namespace LemonSubtitleStudio.Services
 {
@@ -24,40 +26,30 @@ namespace LemonSubtitleStudio.Services
             Tasks.Clear();
         }
 
-        public async Task ExecuteTasksAsync(CancellationToken cancellationToken)
+        public async System.Threading.Tasks.Task ExecuteTasksAsync(Func<TaskItem, CancellationToken, System.Threading.Tasks.Task> processTask, CancellationToken cancellationToken)
         {
             foreach (var task in Tasks)
             {
                 if (cancellationToken.IsCancellationRequested)
                     break;
 
-                task.Status = TaskStatus.Processing;
+                task.Status = Models.TaskStatus.Processing;
                 task.Progress = 0;
 
                 try
                 {
-                    await ExecuteTaskAsync(task, cancellationToken);
-                    task.Status = TaskStatus.Completed;
+                    await processTask(task, cancellationToken);
+                    task.Status = Models.TaskStatus.Completed;
                     task.Progress = 100;
                 }
                 catch (Exception ex)
                 {
-                    task.Status = TaskStatus.Failed;
+                    task.Status = Models.TaskStatus.Failed;
                     task.ErrorMessage = ex.Message;
                 }
 
                 TaskCompleted?.Invoke(this, new TaskCompletedEventArgs(task));
             }
-        }
-
-        private async Task ExecuteTaskAsync(TaskItem task, CancellationToken cancellationToken)
-        {
-            await Task.Delay(1000, cancellationToken);
-            task.Progress = 33;
-            await Task.Delay(1000, cancellationToken);
-            task.Progress = 66;
-            await Task.Delay(1000, cancellationToken);
-            task.Progress = 100;
         }
     }
 

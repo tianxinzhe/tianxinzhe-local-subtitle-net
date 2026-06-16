@@ -1,4 +1,6 @@
 
+using System;
+
 namespace LemonSubtitleStudio.Models
 {
     public enum TaskStatus

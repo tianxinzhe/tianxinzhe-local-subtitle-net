@@ -1,4 +1,7 @@
 
+using System;
+using System.Collections.Generic;
+
 namespace LemonSubtitleStudio.Services
 {
     public interface ILoggingService

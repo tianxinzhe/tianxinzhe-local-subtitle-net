@@ -1,5 +1,8 @@
 
+using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace LemonSubtitleStudio.Services
 {
@@ -55,8 +58,9 @@ namespace LemonSubtitleStudio.Services
             {
                 File.AppendAllText(_logFilePath, message + Environment.NewLine);
             }
-            catch
+            catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"写入日志文件失败: {ex.Message}");
             }
         }
     }

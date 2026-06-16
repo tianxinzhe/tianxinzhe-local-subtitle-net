@@ -1,5 +1,6 @@
 
 using Microsoft.Win32;
+using System;
 using System.IO;
 
 namespace LemonSubtitleStudio.Services
@@ -8,13 +9,13 @@ namespace LemonSubtitleStudio.Services
     {
         public string SelectFolder(string title = "选择文件夹")
         {
-            using var dialog = new OpenFolderDialog { Title = title };
+            var dialog = new OpenFolderDialog { Title = title };
             return dialog.ShowDialog() == true ? dialog.FolderName : string.Empty;
         }
 
         public string[] SelectFiles(string filter, string title = "选择文件")
         {
-            using var dialog = new OpenFileDialog 
+            var dialog = new OpenFileDialog 
             { 
                 Title = title, 
                 Filter = filter,

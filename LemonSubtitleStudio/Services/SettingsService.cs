@@ -1,4 +1,4 @@
-
+using System;
 using System.IO;
 using System.Xml.Serialization;
 
@@ -6,7 +6,7 @@ namespace LemonSubtitleStudio.Services
 {
     public class SettingsService : ISettingsService
     {
-        private const string SettingsFile = "settings.xml";
+        private readonly string _settingsFile;
         private SettingsData _settings;
 
         public string ModelStoragePath
@@ -27,6 +27,12 @@ namespace LemonSubtitleStudio.Services
             set => _settings.DefaultModel = value;
         }
 
+        public string DefaultTranslationModel
+        {
+            get => _settings.DefaultTranslationModel;
+            set => _settings.DefaultTranslationModel = value;
+        }
+
         public string DefaultLanguage
         {
             get => _settings.DefaultLanguage;
@@ -41,6 +47,12 @@ namespace LemonSubtitleStudio.Services
 
         public SettingsService()
         {
+            var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            var appPath = Path.Combine(appDataPath, "LemonSubtitleStudio");
+            if (!Directory.Exists(appPath))
+                Directory.CreateDirectory(appPath);
+            _settingsFile = Path.Combine(appPath, "settings.xml");
+            
             _settings = new SettingsData();
             Load();
         }
@@ -48,16 +60,16 @@ namespace LemonSubtitleStudio.Services
         public void Save()
         {
             var serializer = new XmlSerializer(typeof(SettingsData));
-            using var writer = new StreamWriter(SettingsFile);
+            using var writer = new StreamWriter(_settingsFile);
             serializer.Serialize(writer, _settings);
         }
 
         public void Load()
         {
-            if (File.Exists(SettingsFile))
+            if (File.Exists(_settingsFile))
             {
                 var serializer = new XmlSerializer(typeof(SettingsData));
-                using var reader = new StreamReader(SettingsFile);
+                using var reader = new StreamReader(_settingsFile);
                 _settings = (SettingsData)serializer.Deserialize(reader);
             }
             else
@@ -67,6 +79,7 @@ namespace LemonSubtitleStudio.Services
                     ModelStoragePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "LemonSubtitleStudio", "Models"),
                     DefaultOutputDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
                     DefaultModel = "base",
+                    DefaultTranslationModel = "marianmt-zh-en",
                     DefaultLanguage = "zh",
                     UseGPU = true
                 };
@@ -79,6 +92,7 @@ namespace LemonSubtitleStudio.Services
         public string ModelStoragePath { get; set; } = string.Empty;
         public string DefaultOutputDirectory { get; set; } = string.Empty;
         public string DefaultModel { get; set; } = string.Empty;
+        public string DefaultTranslationModel { get; set; } = string.Empty;
         public string DefaultLanguage { get; set; } = string.Empty;
         public bool UseGPU { get; set; } = true;
     }
