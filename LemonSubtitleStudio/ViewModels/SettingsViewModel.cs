@@ -100,9 +100,11 @@ namespace LemonSubtitleStudio.ViewModels
         public DelegateCommand BrowseModelPathCommand { get; }
         public DelegateCommand BrowseOutputPathCommand { get; }
         public DelegateCommand SaveCommand { get; }
-        public DelegateCommand DownloadModelCommand { get; }
-        public DelegateCommand DeleteModelCommand { get; }
-        public DelegateCommand SetDefaultModelCommand { get; }
+        public DelegateCommand<ModelInfo> DownloadModelCommand { get; }
+        public DelegateCommand<ModelInfo> DeleteModelCommand { get; }
+        public DelegateCommand<ModelInfo> SetDefaultModelCommand { get; }
+        public DelegateCommand<string> SwitchModelCategoryCommand { get; }
+        public DelegateCommand RestoreDefaultsCommand { get; }
 
         public SettingsViewModel(ISettingsService settingsService, IFileService fileService, IModelManagerService modelManagerService, ILoggingService loggingService)
         {
@@ -117,9 +119,11 @@ namespace LemonSubtitleStudio.ViewModels
             BrowseModelPathCommand = new DelegateCommand(BrowseModelPath);
             BrowseOutputPathCommand = new DelegateCommand(BrowseOutputPath);
             SaveCommand = new DelegateCommand(Save);
-            DownloadModelCommand = new DelegateCommand(async () => await DownloadModel());
-            DeleteModelCommand = new DelegateCommand(DeleteModel);
-            SetDefaultModelCommand = new DelegateCommand(SetDefaultModel);
+            DownloadModelCommand = new DelegateCommand<ModelInfo>(async (model) => await DownloadModel(model));
+            DeleteModelCommand = new DelegateCommand<ModelInfo>(DeleteModel);
+            SetDefaultModelCommand = new DelegateCommand<ModelInfo>(SetDefaultModel);
+            SwitchModelCategoryCommand = new DelegateCommand<string>(SwitchModelCategory);
+            RestoreDefaultsCommand = new DelegateCommand(RestoreDefaults);
         }
 
         private void LoadSettings()
@@ -136,6 +140,13 @@ namespace LemonSubtitleStudio.ViewModels
             AvailableModels.Clear();
             if (_modelCategory == "Whisper 模型")
             {
+                var modelDescs = new Dictionary<string, string>
+                {
+                    ["tiny"] = "Fastest, least accurate",
+                    ["base"] = "Fast, moderate accuracy",
+                    ["small"] = "Balanced speed and accuracy",
+                    ["medium"] = "Accurate, needs more resources"
+                };
                 foreach (var modelName in Models)
                 {
                     var path = _modelManagerService.GetModelPath(modelName);
@@ -148,13 +159,22 @@ namespace LemonSubtitleStudio.ViewModels
                         Category = "Whisper",
                         IsInstalled = exists,
                         IsDefault = isDefault,
-                        Size = exists ? GetFileSize(path) : "未安装"
+                        Size = exists ? GetFileSize(path) : "未安装",
+                        Description = modelDescs.TryGetValue(modelName, out var d) ? d : string.Empty
                     });
                 }
             }
             else
             {
-                var translationModels = new List<string> { "marianmt-zh-en", "marianmt-en-zh" };
+                var modelDescs = new Dictionary<string, string>
+                {
+                    ["marianmt-zh-en"] = "Chinese to English",
+                    ["marianmt-en-zh"] = "English to Chinese",
+                    ["nllb-200-distilled-600M"] = "200-language NLLB model",
+                    ["m2m100-418M"] = "100-language M2M model",
+                    ["translate-gemma-4b"] = "Google Gemma 4B"
+                };
+                var translationModels = new List<string> { "marianmt-zh-en", "marianmt-en-zh", "nllb-200-distilled-600M", "m2m100-418M", "translate-gemma-4b" };
                 foreach (var modelName in translationModels)
                 {
                     var path = _modelManagerService.GetTranslationModelPath(modelName);
@@ -167,7 +187,8 @@ namespace LemonSubtitleStudio.ViewModels
                         Category = "Translation",
                         IsInstalled = exists,
                         IsDefault = isDefault,
-                        Size = exists ? GetFileSize(path) : "未安装"
+                        Size = exists ? GetFileSize(path) : "未安装",
+                        Description = modelDescs.TryGetValue(modelName, out var d) ? d : string.Empty
                     });
                 }
             }
@@ -209,14 +230,14 @@ namespace LemonSubtitleStudio.ViewModels
                 DefaultOutputDirectory = folder;
         }
 
-        private async System.Threading.Tasks.Task DownloadModel()
+        private async System.Threading.Tasks.Task DownloadModel(ModelInfo model)
         {
-            if (SelectedModelInfo == null || SelectedModelInfo.IsInstalled) return;
-            if (_progressMap.ContainsKey(SelectedModelInfo.Name)) return;
+            if (model == null || model.IsInstalled) return;
+            if (_progressMap.ContainsKey(model.Name)) return;
 
             IsDownloading = true;
-            _progressMap[SelectedModelInfo.Name] = 0;
-            SelectedModelInfo.RaiseProgressChanged();
+            _progressMap[model.Name] = 0;
+            model.Progress = 0;
 
             try
             {
@@ -224,36 +245,36 @@ namespace LemonSubtitleStudio.ViewModels
                 {
                     System.Windows.Application.Current.Dispatcher.Invoke(() =>
                     {
-                        _progressMap[SelectedModelInfo.Name] = progress;
-                        SelectedModelInfo.Progress = progress;
+                        _progressMap[model.Name] = progress;
+                        model.Progress = progress;
                     });
                 });
-                if (SelectedModelInfo.Category == "Whisper")
-                    await _modelManagerService.DownloadModelAsync(SelectedModelInfo.Name, progressHandler);
+                if (model.Category == "Whisper")
+                    await _modelManagerService.DownloadModelAsync(model.Name, progressHandler);
                 else
-                    await _modelManagerService.DownloadTranslationModelAsync(SelectedModelInfo.Name, progressHandler);
+                    await _modelManagerService.DownloadTranslationModelAsync(model.Name, progressHandler);
                 LoadAvailableModels();
             }
             catch (Exception ex)
             {
-                _loggingService.LogError("下载模型失败: " + SelectedModelInfo.Name, ex);
+                _loggingService.LogError("下载模型失败: " + model.Name, ex);
             }
             finally
             {
-                _progressMap.Remove(SelectedModelInfo.Name);
+                _progressMap.Remove(model.Name);
                 IsDownloading = false;
                 DownloadProgress = 0;
-                if (SelectedModelInfo != null) SelectedModelInfo.Progress = 0;
+                model.Progress = 0;
             }
         }
 
-        private void DeleteModel()
+        private void DeleteModel(ModelInfo model)
         {
-            if (SelectedModelInfo == null || !SelectedModelInfo.IsInstalled) return;
+            if (model == null || !model.IsInstalled) return;
 
-            var path = SelectedModelInfo.Category == "Whisper"
-                ? _modelManagerService.GetModelPath(SelectedModelInfo.Name)
-                : _modelManagerService.GetTranslationModelPath(SelectedModelInfo.Name);
+            var path = model.Category == "Whisper"
+                ? _modelManagerService.GetModelPath(model.Name)
+                : _modelManagerService.GetTranslationModelPath(model.Name);
             if (File.Exists(path))
             {
                 File.Delete(path);
@@ -261,14 +282,27 @@ namespace LemonSubtitleStudio.ViewModels
             }
         }
 
-        private void SetDefaultModel()
+        private void SetDefaultModel(ModelInfo model)
         {
-            if (SelectedModelInfo == null) return;
+            if (model == null) return;
 
-            if (SelectedModelInfo.Category == "Whisper")
-                SelectedModel = SelectedModelInfo.Name;
+            if (model.Category == "Whisper")
+                SelectedModel = model.Name;
             else
-                _settingsService.DefaultTranslationModel = SelectedModelInfo.Name;
+                _settingsService.DefaultTranslationModel = model.Name;
+            LoadAvailableModels();
+        }
+
+        private void SwitchModelCategory(string category)
+        {
+            if (category == "Speech") ModelCategory = "Whisper 模型";
+            else ModelCategory = "翻译模型";
+        }
+
+        private void RestoreDefaults()
+        {
+            _settingsService.RestoreDefaults();
+            LoadSettings();
             LoadAvailableModels();
         }
 
@@ -295,14 +329,44 @@ namespace LemonSubtitleStudio.ViewModels
         public bool IsInstalled { get; set; }
         public bool IsDefault { get; set; }
         public string Size { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+
+        public string StatusLabel
+        {
+            get
+            {
+                if (IsDefault) return "Default";
+                if (IsInstalled) return "Installed";
+                if (Progress > 0) return $"{Progress}%";
+                return "Not Installed";
+            }
+        }
+
+        public string StatusColor
+        {
+            get
+            {
+                if (IsDefault) return "#FFB95C";
+                if (IsInstalled) return "#4ADE80";
+                if (Progress > 0) return "#FFA500";
+                return "#606070";
+            }
+        }
 
         private int _progress;
         public int Progress
         {
             get => _progress;
-            set { _progress = value; OnPropertyChanged(nameof(Progress)); OnPropertyChanged(nameof(ProgressText)); }
+            set
+            {
+                _progress = value;
+                OnPropertyChanged(nameof(Progress));
+                OnPropertyChanged(nameof(ProgressText));
+                OnPropertyChanged(nameof(StatusLabel));
+                OnPropertyChanged(nameof(StatusColor));
+            }
         }
-        public string ProgressText => IsInstalled ? "100%" : (Progress > 0 ? $"{Progress}%" : "未下载");
+        public string ProgressText => IsInstalled ? "100%" : (Progress > 0 ? $"{Progress}%" : "Not Downloaded");
 
         public event PropertyChangedEventHandler? PropertyChanged;
         public void RaiseProgressChanged() => OnPropertyChanged(nameof(ProgressText));

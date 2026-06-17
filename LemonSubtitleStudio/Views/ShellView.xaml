@@ -3,91 +3,96 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:prism="http://prismlibrary.com/"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-             Title="Lemon Subtitle Studio" Height="720" Width="1280">
+             Title="Lemon Subtitle Studio" Height="720" Width="1280"
+             Background="#111125" Foreground="#E2E0FC"
+             WindowStartupLocation="CenterScreen">
     <DockPanel LastChildFill="True">
-        <Grid x:Name="Sidebar" Width="240" DockPanel.Dock="Left" Background="#16213E">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="80" />
-                <RowDefinition Height="*" />
-                <RowDefinition Height="80" />
-            </Grid.RowDefinitions>
-            <StackPanel Grid.Row="0" Orientation="Vertical" Margin="16,20,16,0">
-                <TextBlock Text="Lemon" FontSize="18" FontWeight="Bold" Foreground="#FFA500" />
-                <TextBlock Text="Subtitle Studio" FontSize="12" Foreground="#A0A0B0" />
-            </StackPanel>
-            <StackPanel Grid.Row="1" Margin="8,0,8,0">
-                <Button Style="{StaticResource NavButtonStyle}"
-                        Command="{Binding NavigateCommand}" 
-                        CommandParameter="VideoToSubtitleView"
-                        Margin="4,4,4,0">
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="Video" Width="16" Height="16" Margin="0,0,8,0" />
-                        <TextBlock Text="视频转字幕" />
-                    </StackPanel>
-                </Button>
-                <Button Style="{StaticResource NavButtonStyle}"
-                        Command="{Binding NavigateCommand}" 
-                        CommandParameter="VideoToAudioView"
-                        Margin="4,4,4,0">
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="Music" Width="16" Height="16" Margin="0,0,8,0" />
-                        <TextBlock Text="视频转音频" />
-                    </StackPanel>
-                </Button>
-                <Button Style="{StaticResource NavButtonStyle}"
-                        Command="{Binding NavigateCommand}" 
-                        CommandParameter="AudioToSubtitleView"
-                        Margin="4,4,4,0">
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="Microphone" Width="16" Height="16" Margin="0,0,8,0" />
-                        <TextBlock Text="音频转字幕" />
-                    </StackPanel>
-                </Button>
-                <Button Style="{StaticResource NavButtonStyle}"
-                        Command="{Binding NavigateCommand}" 
-                        CommandParameter="SubtitleTranslationView"
-                        Margin="4,4,4,0">
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="Translate" Width="16" Height="16" Margin="0,0,8,0" />
-                        <TextBlock Text="字幕翻译" />
-                    </StackPanel>
-                </Button>
-                <Button Style="{StaticResource NavButtonStyle}"
-                        Command="{Binding NavigateCommand}" 
-                        CommandParameter="SubtitleEditorView"
-                        Margin="4,4,4,0">
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="Edit" Width="16" Height="16" Margin="0,0,8,0" />
-                        <TextBlock Text="字幕编辑" />
-                    </StackPanel>
-                </Button>
-                <Button Style="{StaticResource NavButtonStyle}"
-                        Command="{Binding NavigateCommand}" 
-                        CommandParameter="SettingsView"
-                        Margin="4,4,4,0">
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="Settings" Width="16" Height="16" Margin="0,0,8,0" />
-                        <TextBlock Text="软件设置" />
-                    </StackPanel>
-                </Button>
-            </StackPanel>
-            <StackPanel Grid.Row="2" Margin="16,0,16,16">
-                <ComboBox x:Name="LanguageSelector" 
-                          SelectedItem="{Binding SelectedLanguage}"
-                          ItemsSource="{Binding Languages}"
-                          Height="28"
-                          Style="{StaticResource LanguageComboBoxStyle}" />
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,8,0,0">
-                    <TextBlock Text="内存: " Foreground="#A0A0B0" FontSize="10" />
-                    <TextBlock Text="{Binding MemoryUsage}" Foreground="#00C853" FontSize="10" />
-                    <TextBlock Text=" CPU: " Foreground="#A0A0B0" FontSize="10" Margin="4,0,0,0" />
-                    <TextBlock Text="{Binding CpuUsage}" Foreground="#FFA500" FontSize="10" />
+        <Border Width="240" DockPanel.Dock="Left" Background="#1A1A2E" BorderBrush="#534433" BorderThickness="0,0,1,0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <StackPanel Grid.Row="0" Margin="16,16,16,12">
+                    <TextBlock Text="Lemon Subtitle Studio" FontSize="20" FontWeight="Bold" Foreground="#FFA500" />
+                    <TextBlock Text="GPU: Active • CPU: 12%" FontSize="12" Foreground="#D9C3AC" Opacity="0.7" Margin="0,4,0,0" />
                 </StackPanel>
-                <TextBlock Text="v1.0.0" FontSize="10" Foreground="#505060" HorizontalAlignment="Center" Margin="0,4,0,0" />
-            </StackPanel>
-        </Grid>
-        <Border BorderThickness="1,0,0,0" BorderBrush="#2A2A4A">
-            <ContentControl prism:RegionManager.RegionName="ContentRegion" />
+                <StackPanel Grid.Row="1" Margin="8,0,8,0">
+                    <Button Style="{StaticResource NavButtonStyle}"
+                            Command="{Binding NavigateCommand}"
+                            CommandParameter="VideoToSubtitleView"
+                            Margin="4,2">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="ClosedCaption" Width="20" Height="20" Margin="0,0,12,0" />
+                            <TextBlock Text="Video → Subtitle" FontSize="14" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource NavButtonStyle}"
+                            Command="{Binding NavigateCommand}"
+                            CommandParameter="VideoToAudioView"
+                            Margin="4,2">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Movie" Width="20" Height="20" Margin="0,0,12,0" />
+                            <TextBlock Text="Video → Audio" FontSize="14" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource NavButtonStyle}"
+                            Command="{Binding NavigateCommand}"
+                            CommandParameter="AudioToSubtitleView"
+                            Margin="4,2">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="MusicNote" Width="20" Height="20" Margin="0,0,12,0" />
+                            <TextBlock Text="Audio → Subtitle" FontSize="14" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource NavButtonStyle}"
+                            Command="{Binding NavigateCommand}"
+                            CommandParameter="SubtitleTranslationView"
+                            Margin="4,2">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Translate" Width="20" Height="20" Margin="0,0,12,0" />
+                            <TextBlock Text="Subtitle Translation" FontSize="14" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource NavButtonStyle}"
+                            Command="{Binding NavigateCommand}"
+                            CommandParameter="SubtitleEditorView"
+                            Margin="4,2">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="NoteText" Width="20" Height="20" Margin="0,0,12,0" />
+                            <TextBlock Text="Subtitle Editor" FontSize="14" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource NavButtonStyle}"
+                            Command="{Binding NavigateCommand}"
+                            CommandParameter="SettingsView"
+                            Margin="4,2" HorizontalAlignment="Stretch">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Settings" Width="20" Height="20" Margin="0,0,12,0" />
+                            <TextBlock Text="Settings" FontSize="14" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+                <StackPanel Grid.Row="2" Margin="16,0,16,16">
+                    <Button Content="Check for Updates" Background="#FFA500" Foreground="#462A00"
+                            FontSize="12" FontWeight="Bold" Padding="8,6" BorderThickness="0"
+                            HorizontalAlignment="Stretch" />
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,8,0,0">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,12,0">
+                            <materialDesign:PackIcon Kind="Translate" Width="14" Height="14" Foreground="#D9C3AC" Margin="0,0,4,0" VerticalAlignment="Center" />
+                            <TextBlock Text="Language" Foreground="#D9C3AC" FontSize="12" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="InformationOutline" Width="14" Height="14" Foreground="#D9C3AC" Margin="0,0,4,0" VerticalAlignment="Center" />
+                            <TextBlock Text="v2.4.0" Foreground="#D9C3AC" FontSize="12" />
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+        </Border>
+        <Border BorderThickness="0" Background="#111125">
+            <ContentControl prism:RegionManager.RegionName="ContentRegion" Margin="0" />
         </Border>
     </DockPanel>
 </Window>

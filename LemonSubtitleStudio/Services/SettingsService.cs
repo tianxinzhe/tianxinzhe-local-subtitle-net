@@ -74,16 +74,27 @@ namespace LemonSubtitleStudio.Services
             }
             else
             {
-                _settings = new SettingsData
-                {
-                    ModelStoragePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "LemonSubtitleStudio", "Models"),
-                    DefaultOutputDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
-                    DefaultModel = "base",
-                    DefaultTranslationModel = "marianmt-zh-en",
-                    DefaultLanguage = "zh",
-                    UseGPU = true
-                };
+                SetDefaults();
             }
+        }
+
+        public void RestoreDefaults()
+        {
+            SetDefaults();
+            Save();
+        }
+
+        private void SetDefaults()
+        {
+            _settings = new SettingsData
+            {
+                ModelStoragePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "LemonSubtitleStudio", "Models"),
+                DefaultOutputDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                DefaultModel = "base",
+                DefaultTranslationModel = "marianmt-zh-en",
+                DefaultLanguage = "zh",
+                UseGPU = true
+            };
         }
     }
 

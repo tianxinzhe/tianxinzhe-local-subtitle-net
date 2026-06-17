@@ -28,6 +28,8 @@ namespace LemonSubtitleStudio.ViewModels
 
         public List<string> Languages { get; } = new List<string> { "中文", "English", "日本語", "한국어" };
         public List<string> AvailableModels { get; } = new List<string> { "tiny", "base", "small", "medium" };
+        public List<string> ProcessingModes { get; } = new List<string> { "Auto", "Fast", "Accurate" };
+        public List<string> OutputFormats { get; } = new List<string> { ".srt", ".vtt", ".ass" };
 
         private string _selectedLanguage = "中文";
         public string SelectedLanguage
@@ -43,6 +45,20 @@ namespace LemonSubtitleStudio.ViewModels
             set { _selectedModel = value; OnPropertyChanged(); }
         }
 
+        private string _selectedProcessingMode = "Auto";
+        public string SelectedProcessingMode
+        {
+            get => _selectedProcessingMode;
+            set { _selectedProcessingMode = value; OnPropertyChanged(); }
+        }
+
+        private string _selectedOutputFormat = ".srt";
+        public string SelectedOutputFormat
+        {
+            get => _selectedOutputFormat;
+            set { _selectedOutputFormat = value; OnPropertyChanged(); }
+        }
+
         private string _outputDirectory = string.Empty;
         public string OutputDirectory
         {
@@ -54,8 +70,12 @@ namespace LemonSubtitleStudio.ViewModels
         public int OverallProgress
         {
             get => _overallProgress;
-            set { _overallProgress = value; OnPropertyChanged(); }
+            set { _overallProgress = value; OnPropertyChanged(); OnPropertyChanged(nameof(OverallProgressPercent)); }
         }
+
+        public double OverallProgressPercent => OverallProgress * 0.01;
+
+        public string RemainingTimeFormatted { get; set; } = "--:--:--";
 
         private string _currentTaskInfo = string.Empty;
         public string CurrentTaskInfo

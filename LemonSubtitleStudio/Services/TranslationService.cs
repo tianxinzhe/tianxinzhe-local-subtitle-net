@@ -13,7 +13,7 @@ namespace LemonSubtitleStudio.Services
     {
         private readonly ISettingsService _settingsService;
         private readonly ILoggingService _loggingService;
-        private readonly List<string> _availableModels = new List<string> { "marianmt-zh-en", "marianmt-en-zh" };
+        private readonly List<string> _availableModels = new List<string> { "marianmt-zh-en", "marianmt-en-zh", "nllb-200-distilled-600M", "m2m100-418M", "translate-gemma-4b" };
         private InferenceSession? _session;
         private bool _disposed = false;
 

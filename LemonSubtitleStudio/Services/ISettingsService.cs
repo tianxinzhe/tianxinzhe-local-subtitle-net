@@ -11,5 +11,6 @@ namespace LemonSubtitleStudio.Services
         bool UseGPU { get; set; }
         void Save();
         void Load();
+        void RestoreDefaults();
     }
 }

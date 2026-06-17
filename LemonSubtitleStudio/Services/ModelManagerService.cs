@@ -62,7 +62,7 @@ namespace LemonSubtitleStudio.Services
             if (!Directory.Exists(directory))
                 Directory.CreateDirectory(directory!);
 
-            var url = $"https://huggingface.co/Helsinki-NLP/opus-mt-{modelName.Replace("marianmt-", "")}/resolve/main/onnx/model.onnx";
+            var url = GetTranslationModelDownloadUrl(modelName);
             var tempPath = modelPath + ".tmp";
             try
             {
@@ -75,6 +75,19 @@ namespace LemonSubtitleStudio.Services
                 if (File.Exists(tempPath)) File.Delete(tempPath);
                 throw;
             }
+        }
+
+        private static string GetTranslationModelDownloadUrl(string modelName)
+        {
+            return modelName switch
+            {
+                "nllb-200-distilled-600M" => "https://huggingface.co/facebook/nllb-200-distilled-600M/resolve/main/model.onnx",
+                "m2m100-418M" => "https://huggingface.co/facebook/m2m100-418M/resolve/main/model.onnx",
+                "translate-gemma-4b" => "https://huggingface.co/google/translate-gemma-4b/resolve/main/model.onnx",
+                _ when modelName.StartsWith("marianmt-") =>
+                    $"https://huggingface.co/Helsinki-NLP/opus-mt-{modelName.Replace("marianmt-", "")}/resolve/main/onnx/model.onnx",
+                _ => throw new ArgumentException($"Unknown translation model: {modelName}")
+            };
         }
 
         private async Task DownloadFileAsync(string url, string destPath, IProgress<int> progress)

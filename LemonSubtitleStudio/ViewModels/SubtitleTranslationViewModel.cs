@@ -20,8 +20,17 @@ namespace LemonSubtitleStudio.ViewModels
 
         public ObservableCollection<TaskItem> Tasks { get; } = new ObservableCollection<TaskItem>();
         public ObservableCollection<SubtitleItem> Subtitles { get; } = new ObservableCollection<SubtitleItem>();
+        public ObservableCollection<string> Logs { get; } = new ObservableCollection<string>();
 
         public List<string> Languages { get; } = new List<string> { "中文", "English", "日本語", "한국어" };
+        public List<string> TranslationModels { get; } = new List<string> { "marianmt-en-zh", "marianmt-zh-en" };
+
+        private string _selectedTranslationModel = "marianmt-en-zh";
+        public string SelectedTranslationModel
+        {
+            get => _selectedTranslationModel;
+            set { _selectedTranslationModel = value; OnPropertyChanged(); }
+        }
 
         private string _sourceLanguage = "English";
         public string SourceLanguage

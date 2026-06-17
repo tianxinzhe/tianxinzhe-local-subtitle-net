@@ -11,6 +11,7 @@ namespace LemonSubtitleStudio.Models
         public string OriginalText { get; set; } = string.Empty;
         public string TranslatedText { get; set; } = string.Empty;
         public bool IsSelected { get; set; }
+        public bool IsTranslated { get; set; }
 
         public string StartTimeFormatted => FormatTime(StartTime);
         public string EndTimeFormatted => FormatTime(EndTime);
