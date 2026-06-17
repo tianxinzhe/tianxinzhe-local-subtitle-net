@@ -87,5 +87,6 @@
     <converters:NullAndBoolConverter x:Key="NullAndBoolConverter" />
     <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
     <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter" />
+    <converters:InverseBoolConverter x:Key="InverseBoolConverter" />
     <converters:EqualityConverter x:Key="EqualityConverter" />
 </ResourceDictionary>
