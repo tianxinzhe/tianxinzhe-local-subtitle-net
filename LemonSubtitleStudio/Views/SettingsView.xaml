@@ -67,30 +67,38 @@
                                             <Border Grid.Column="3" Background="#0C0C1F" CornerRadius="10" Padding="8,2" HorizontalAlignment="Center" VerticalAlignment="Center">
                                                 <TextBlock Text="{Binding StatusLabel}" Foreground="{Binding StatusColor}" FontSize="10" FontWeight="Bold" />
                                             </Border>
-                                             <StackPanel Grid.Column="4" Orientation="Vertical" HorizontalAlignment="Right" VerticalAlignment="Center" MinWidth="100">
-                                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                                     <Button Content="Download" Padding="10,4" FontSize="11" FontWeight="Bold"
-                                                             Background="#FFA500" Foreground="#462A00" BorderThickness="0" Margin="2,0"
-                                                             Command="{Binding DataContext.DownloadModelCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                             CommandParameter="{Binding}"
-                                                             Visibility="{Binding IsInstalled, Converter={StaticResource InverseBoolToVisibilityConverter}}"
-                                                             IsEnabled="{Binding DataContext.IsDownloading, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource InverseBoolConverter}}" />
-                                                     <Button Content="Downloading..." Padding="10,4" FontSize="11" FontWeight="Bold"
-                                                             Background="#448AFF" Foreground="White" BorderThickness="0" Margin="2,0"
-                                                             Visibility="{Binding DataContext.IsDownloading, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVisibilityConverter}}" />
-                                                     <Button Content="Downloaded" Padding="10,4" FontSize="11"
-                                                             Background="#333348" Foreground="#606070" BorderThickness="0" Margin="2,0"
-                                                             Visibility="{Binding IsInstalled, Converter={StaticResource BoolToVisibilityConverter}}" />
-                                                     <Button Content="Set Default" Padding="10,4" FontSize="11" FontWeight="Bold"
-                                                             Background="#294A77" Foreground="#FFB95C" BorderThickness="0" Margin="2,0"
-                                                             Command="{Binding DataContext.SetDefaultModelCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                             CommandParameter="{Binding}" />
-                                                 </StackPanel>
-                                                 <ProgressBar Height="4" Margin="0,4,0,0"
-                                                              Value="{Binding DataContext.DownloadProgress, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                              Foreground="#FFA500" Background="#333348"
-                                                              Visibility="{Binding DataContext.IsDownloading, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVisibilityConverter}}" />
-                                             </StackPanel>
+                                              <StackPanel Grid.Column="4" Orientation="Vertical" HorizontalAlignment="Right" VerticalAlignment="Center" MinWidth="100">
+                                                  <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                                      <Button Content="Download" Padding="10,4" FontSize="11" FontWeight="Bold"
+                                                              Background="#FFA500" Foreground="#462A00" BorderThickness="0" Margin="2,0"
+                                                              Command="{Binding DataContext.DownloadModelCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                              CommandParameter="{Binding}"
+                                                              Visibility="{Binding CanDownload, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                                      <Button Content="Downloading..." Padding="10,4" FontSize="11" FontWeight="Bold"
+                                                              Background="#448AFF" Foreground="White" BorderThickness="0" Margin="2,0"
+                                                              Visibility="{Binding IsDownloading, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                                      <Button Content="Downloaded" Padding="10,4" FontSize="11"
+                                                              Background="#333348" Foreground="#606070" BorderThickness="0" Margin="2,0"
+                                                              IsEnabled="False"
+                                                              Visibility="{Binding IsInstalled, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                                      <Button Content="Retry" Padding="10,4" FontSize="11" FontWeight="Bold"
+                                                              Background="#FF4D4D" Foreground="White" BorderThickness="0" Margin="2,0"
+                                                              Command="{Binding DataContext.DownloadModelCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                              CommandParameter="{Binding}"
+                                                              Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                                      <Button Content="Set Default" Padding="10,4" FontSize="11" FontWeight="Bold"
+                                                              Background="#294A77" Foreground="#FFB95C" BorderThickness="0" Margin="2,0"
+                                                              Command="{Binding DataContext.SetDefaultModelCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                              CommandParameter="{Binding}" />
+                                                  </StackPanel>
+                                                  <ProgressBar Height="4" Margin="0,4,0,0"
+                                                               Value="{Binding Progress}"
+                                                               Foreground="#FFA500" Background="#333348"
+                                                               Visibility="{Binding IsDownloading, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                                  <TextBlock Text="{Binding ErrorMessage}" Foreground="#FF4D4D" FontSize="10"
+                                                             Margin="0,2,0,0" TextWrapping="Wrap"
+                                                             Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                              </StackPanel>
                                         </Grid>
                                     </Border>
                                 </DataTemplate>
@@ -138,6 +146,23 @@
                             </Grid>
                         </StackPanel>
                     </Grid>
+                </Border>
+            </StackPanel>
+
+            <!-- Network -->
+            <StackPanel Margin="0,0,0,28">
+                <Border BorderBrush="#534433" BorderThickness="0,0,0,1" Padding="0,0,0,8" Margin="0,0,0,16">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="Web" Width="20" Height="20" Foreground="#FFA500" Margin="0,0,8,0" VerticalAlignment="Center" />
+                        <TextBlock Text="Network &amp; Download Source" FontSize="16" FontWeight="Bold" Foreground="#E2E0FC" />
+                    </StackPanel>
+                </Border>
+                <Border Background="#1E1E32" BorderBrush="#534433" BorderThickness="1" CornerRadius="8" Padding="20">
+                    <StackPanel>
+                        <TextBlock Text="HUGGINGFACE BASE URL" Foreground="#D9C3AC" FontSize="10" FontWeight="Bold" Margin="0,0,0,8" />
+                        <TextBox Text="{Binding HuggingFaceBaseUrl}" Style="{StaticResource MaterialDesignFloatingHintTextBox}" />
+                        <TextBlock Text="Default: https://huggingface.co | China mirror: https://hf-mirror.com" Foreground="#606070" FontSize="10" Margin="0,4,0,0" />
+                    </StackPanel>
                 </Border>
             </StackPanel>
 

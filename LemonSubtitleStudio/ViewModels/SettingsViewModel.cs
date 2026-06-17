@@ -35,12 +35,6 @@ namespace LemonSubtitleStudio.ViewModels
             }
         }
 
-        private readonly Dictionary<string, int> _progressMap = new Dictionary<string, int>();
-
-        public int GetModelProgress(ModelInfo model) => _progressMap.TryGetValue(model.Name, out var p) ? p : 0;
-
-        public bool IsModelDownloading(ModelInfo model) => _progressMap.ContainsKey(model.Name);
-
         private string _modelStoragePath = string.Empty;
         public string ModelStoragePath
         {
@@ -76,25 +70,18 @@ namespace LemonSubtitleStudio.ViewModels
             set { _useGPU = value; OnPropertyChanged(); }
         }
 
+        private string _huggingFaceBaseUrl = "https://huggingface.co";
+        public string HuggingFaceBaseUrl
+        {
+            get => _huggingFaceBaseUrl;
+            set { _huggingFaceBaseUrl = value; OnPropertyChanged(); }
+        }
+
         private ModelInfo? _selectedModelInfo;
         public ModelInfo? SelectedModelInfo
         {
             get => _selectedModelInfo;
             set { _selectedModelInfo = value; OnPropertyChanged(); }
-        }
-
-        private bool _isDownloading;
-        public bool IsDownloading
-        {
-            get => _isDownloading;
-            set { _isDownloading = value; OnPropertyChanged(); }
-        }
-
-        private int _downloadProgress;
-        public int DownloadProgress
-        {
-            get => _downloadProgress;
-            set { _downloadProgress = value; OnPropertyChanged(); }
         }
 
         public DelegateCommand BrowseModelPathCommand { get; }
@@ -133,6 +120,7 @@ namespace LemonSubtitleStudio.ViewModels
             SelectedModel = _settingsService.DefaultModel;
             SelectedLanguage = _settingsService.DefaultLanguage;
             UseGPU = _settingsService.UseGPU;
+            HuggingFaceBaseUrl = _settingsService.HuggingFaceBaseUrl;
         }
 
         private void LoadAvailableModels()
@@ -232,12 +220,11 @@ namespace LemonSubtitleStudio.ViewModels
 
         private async System.Threading.Tasks.Task DownloadModel(ModelInfo model)
         {
-            if (model == null || model.IsInstalled) return;
-            if (_progressMap.ContainsKey(model.Name)) return;
+            if (model == null || model.IsInstalled || model.IsDownloading) return;
 
-            IsDownloading = true;
-            _progressMap[model.Name] = 0;
+            model.ErrorMessage = string.Empty;
             model.Progress = 0;
+            model.IsDownloading = true;
 
             try
             {
@@ -245,7 +232,6 @@ namespace LemonSubtitleStudio.ViewModels
                 {
                     System.Windows.Application.Current.Dispatcher.Invoke(() =>
                     {
-                        _progressMap[model.Name] = progress;
                         model.Progress = progress;
                     });
                 });
@@ -257,14 +243,12 @@ namespace LemonSubtitleStudio.ViewModels
             }
             catch (Exception ex)
             {
+                model.ErrorMessage = ex.Message;
                 _loggingService.LogError("下载模型失败: " + model.Name, ex);
             }
             finally
             {
-                _progressMap.Remove(model.Name);
-                IsDownloading = false;
-                DownloadProgress = 0;
-                model.Progress = 0;
+                model.IsDownloading = false;
             }
         }
 
@@ -304,6 +288,7 @@ namespace LemonSubtitleStudio.ViewModels
             _settingsService.RestoreDefaults();
             LoadSettings();
             LoadAvailableModels();
+            HuggingFaceBaseUrl = "https://huggingface.co";
         }
 
         private void Save()
@@ -313,6 +298,7 @@ namespace LemonSubtitleStudio.ViewModels
             _settingsService.DefaultModel = SelectedModel;
             _settingsService.DefaultLanguage = SelectedLanguage;
             _settingsService.UseGPU = UseGPU;
+            _settingsService.HuggingFaceBaseUrl = HuggingFaceBaseUrl;
             _settingsService.Save();
             
             LoadAvailableModels();
@@ -331,25 +317,18 @@ namespace LemonSubtitleStudio.ViewModels
         public string Size { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
 
-        public string StatusLabel
+        private bool _isDownloading;
+        public bool IsDownloading
         {
-            get
+            get => _isDownloading;
+            set
             {
-                if (IsDefault) return "Default";
-                if (IsInstalled) return "Installed";
-                if (Progress > 0) return $"{Progress}%";
-                return "Not Installed";
-            }
-        }
-
-        public string StatusColor
-        {
-            get
-            {
-                if (IsDefault) return "#FFB95C";
-                if (IsInstalled) return "#4ADE80";
-                if (Progress > 0) return "#FFA500";
-                return "#606070";
+                if (_isDownloading == value) return;
+                _isDownloading = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(CanDownload));
+                OnPropertyChanged(nameof(StatusLabel));
+                OnPropertyChanged(nameof(StatusColor));
             }
         }
 
@@ -360,16 +339,57 @@ namespace LemonSubtitleStudio.ViewModels
             set
             {
                 _progress = value;
-                OnPropertyChanged(nameof(Progress));
+                OnPropertyChanged();
                 OnPropertyChanged(nameof(ProgressText));
                 OnPropertyChanged(nameof(StatusLabel));
                 OnPropertyChanged(nameof(StatusColor));
             }
         }
+
+        private string _errorMessage = string.Empty;
+        public string ErrorMessage
+        {
+            get => _errorMessage;
+            set
+            {
+                _errorMessage = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(HasError));
+                OnPropertyChanged(nameof(StatusLabel));
+                OnPropertyChanged(nameof(StatusColor));
+            }
+        }
+
+        public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
+        public bool CanDownload => !IsInstalled && !IsDownloading;
         public string ProgressText => IsInstalled ? "100%" : (Progress > 0 ? $"{Progress}%" : "Not Downloaded");
+
+        public string StatusLabel
+        {
+            get
+            {
+                if (HasError) return "Failed";
+                if (IsDefault) return "Default";
+                if (IsInstalled) return "Installed";
+                if (IsDownloading) return $"{Progress}%";
+                return "Not Installed";
+            }
+        }
+
+        public string StatusColor
+        {
+            get
+            {
+                if (HasError) return "#FF4D4D";
+                if (IsDefault) return "#FFB95C";
+                if (IsInstalled) return "#4ADE80";
+                if (IsDownloading) return "#FFA500";
+                return "#606070";
+            }
+        }
 
         public event PropertyChangedEventHandler? PropertyChanged;
         public void RaiseProgressChanged() => OnPropertyChanged(nameof(ProgressText));
-        protected void OnPropertyChanged(string? propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        protected void OnPropertyChanged(string? propertyName = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }

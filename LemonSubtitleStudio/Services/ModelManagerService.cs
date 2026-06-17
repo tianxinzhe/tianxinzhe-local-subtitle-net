@@ -45,7 +45,7 @@ namespace LemonSubtitleStudio.Services
             if (!Directory.Exists(directory))
                 Directory.CreateDirectory(directory!);
 
-            var url = $"https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-{modelName}.bin";
+            var url = $"{_settingsService.HuggingFaceBaseUrl}/ggerganov/whisper.cpp/resolve/main/ggml-{modelName}.bin";
             await DownloadFileAsync(url, modelPath, progress);
         }
 
@@ -77,15 +77,16 @@ namespace LemonSubtitleStudio.Services
             }
         }
 
-        private static string GetTranslationModelDownloadUrl(string modelName)
+        private string GetTranslationModelDownloadUrl(string modelName)
         {
+            var baseUrl = _settingsService.HuggingFaceBaseUrl;
             return modelName switch
             {
-                "nllb-200-distilled-600M" => "https://huggingface.co/facebook/nllb-200-distilled-600M/resolve/main/model.onnx",
-                "m2m100-418M" => "https://huggingface.co/facebook/m2m100-418M/resolve/main/model.onnx",
-                "translate-gemma-4b" => "https://huggingface.co/google/translate-gemma-4b/resolve/main/model.onnx",
+                "nllb-200-distilled-600M" => $"{baseUrl}/facebook/nllb-200-distilled-600M/resolve/main/model.onnx",
+                "m2m100-418M" => $"{baseUrl}/Xenova/m2m100_418M/resolve/main/onnx/model.onnx",
+                "translate-gemma-4b" => $"{baseUrl}/google/translate-gemma-4b/resolve/main/model.onnx",
                 _ when modelName.StartsWith("marianmt-") =>
-                    $"https://huggingface.co/Helsinki-NLP/opus-mt-{modelName.Replace("marianmt-", "")}/resolve/main/onnx/model.onnx",
+                    $"{baseUrl}/Helsinki-NLP/opus-mt-{modelName.Replace("marianmt-", "")}/resolve/main/onnx/model.onnx",
                 _ => throw new ArgumentException($"Unknown translation model: {modelName}")
             };
         }
