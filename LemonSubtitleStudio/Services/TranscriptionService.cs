@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using LemonSubtitleStudio.Models;
 using Whisper.net;
+using Xabe.FFmpeg;
 
 namespace LemonSubtitleStudio.Services
 {
@@ -62,6 +63,17 @@ namespace LemonSubtitleStudio.Services
                 _ => null
             };
 
+            double totalSeconds = 0;
+            try
+            {
+                var mediaInfo = await FFmpeg.GetMediaInfo(audioPath);
+                totalSeconds = mediaInfo.Duration.TotalSeconds;
+            }
+            catch
+            {
+                totalSeconds = 0;
+            }
+
             using var whisperFactory = WhisperFactory.FromPath(modelPath);
             using var processor = whisperFactory.CreateBuilder()
                 .WithLanguage(whisperLanguage)
@@ -80,8 +92,16 @@ namespace LemonSubtitleStudio.Services
                     EndTime = segment.End,
                     OriginalText = segment.Text
                 });
+
+                if (totalSeconds > 0 && progress != null)
+                {
+                    var percent = (int)(segment.End.TotalSeconds / totalSeconds * 100);
+                    percent = Math.Min(percent, 100);
+                    progress.Report(percent);
+                }
             }
 
+            progress?.Report(100);
             return subtitles;
         }
     }

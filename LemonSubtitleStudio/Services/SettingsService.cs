@@ -51,6 +51,12 @@ namespace LemonSubtitleStudio.Services
             set => _settings.HuggingFaceBaseUrl = value;
         }
 
+        public string TranslationEngine
+        {
+            get => _settings.TranslationEngine;
+            set => _settings.TranslationEngine = value;
+        }
+
         public SettingsService()
         {
             var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
@@ -100,7 +106,8 @@ namespace LemonSubtitleStudio.Services
                 DefaultTranslationModel = "marianmt-zh-en",
                 DefaultLanguage = "zh",
                 UseGPU = true,
-                HuggingFaceBaseUrl = "https://huggingface.co"
+                HuggingFaceBaseUrl = "https://huggingface.co",
+                TranslationEngine = "Auto"
             };
         }
     }
@@ -114,5 +121,6 @@ namespace LemonSubtitleStudio.Services
         public string DefaultLanguage { get; set; } = string.Empty;
         public bool UseGPU { get; set; } = true;
         public string HuggingFaceBaseUrl { get; set; } = "https://huggingface.co";
+        public string TranslationEngine { get; set; } = "Auto";
     }
 }

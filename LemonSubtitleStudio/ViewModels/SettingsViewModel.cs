@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 
 namespace LemonSubtitleStudio.ViewModels
 {
@@ -21,6 +22,7 @@ namespace LemonSubtitleStudio.ViewModels
         public ObservableCollection<ModelInfo> AvailableModels { get; } = new ObservableCollection<ModelInfo>();
 
         public List<string> ModelCategories { get; } = new List<string> { "Whisper 模型", "翻译模型" };
+        public List<string> TranslationEngines { get; } = new List<string> { "Auto", "ONNX (Local)", "Web API" };
 
         private string _modelCategory = "Whisper 模型";
         public string ModelCategory
@@ -77,12 +79,26 @@ namespace LemonSubtitleStudio.ViewModels
             set { _huggingFaceBaseUrl = value; OnPropertyChanged(); }
         }
 
+        private string _translationEngine = "Auto";
+        public string TranslationEngine
+        {
+            get => _translationEngine;
+            set { _translationEngine = value; OnPropertyChanged(); }
+        }
+
         private ModelInfo? _selectedModelInfo;
         public ModelInfo? SelectedModelInfo
         {
             get => _selectedModelInfo;
             set { _selectedModelInfo = value; OnPropertyChanged(); }
         }
+
+        public ObservableCollection<NamingConventionInfo> NamingConventions { get; } = new ObservableCollection<NamingConventionInfo>
+        {
+            new() { Name = "Original", Description = "Keep the original filename", Example = "video.srt", IsSelected = true },
+            new() { Name = "Language Suffix", Description = "Append language code to filename", Example = "video.zh.srt", IsSelected = false },
+            new() { Name = "Custom Pattern", Description = "Use a custom naming pattern", Example = "video_translated.srt", IsSelected = false },
+        };
 
         public DelegateCommand BrowseModelPathCommand { get; }
         public DelegateCommand BrowseOutputPathCommand { get; }
@@ -121,6 +137,7 @@ namespace LemonSubtitleStudio.ViewModels
             SelectedLanguage = _settingsService.DefaultLanguage;
             UseGPU = _settingsService.UseGPU;
             HuggingFaceBaseUrl = _settingsService.HuggingFaceBaseUrl;
+            TranslationEngine = _settingsService.TranslationEngine;
         }
 
         private void LoadAvailableModels()
@@ -159,14 +176,13 @@ namespace LemonSubtitleStudio.ViewModels
                     ["marianmt-zh-en"] = "Chinese to English",
                     ["marianmt-en-zh"] = "English to Chinese",
                     ["nllb-200-distilled-600M"] = "200-language NLLB model",
-                    ["m2m100-418M"] = "100-language M2M model",
-                    ["translate-gemma-4b"] = "Google Gemma 4B"
+                    ["m2m100-418M"] = "100-language M2M model"
                 };
-                var translationModels = new List<string> { "marianmt-zh-en", "marianmt-en-zh", "nllb-200-distilled-600M", "m2m100-418M", "translate-gemma-4b" };
+                var translationModels = new List<string> { "marianmt-zh-en", "marianmt-en-zh", "nllb-200-distilled-600M", "m2m100-418M" };
                 foreach (var modelName in translationModels)
                 {
                     var path = _modelManagerService.GetTranslationModelPath(modelName);
-                    var exists = File.Exists(path);
+                    var exists = Directory.Exists(path);
                     var isDefault = modelName == _settingsService.DefaultTranslationModel;
 
                     AvailableModels.Add(new ModelInfo
@@ -175,7 +191,7 @@ namespace LemonSubtitleStudio.ViewModels
                         Category = "Translation",
                         IsInstalled = exists,
                         IsDefault = isDefault,
-                        Size = exists ? GetFileSize(path) : "未安装",
+                        Size = exists ? GetDirectorySize(path) : "未安装",
                         Description = modelDescs.TryGetValue(modelName, out var d) ? d : string.Empty
                     });
                 }
@@ -196,6 +212,24 @@ namespace LemonSubtitleStudio.ViewModels
             catch (Exception ex)
             {
                 _loggingService.LogError("获取文件大小失败", ex);
+                return "未知";
+            }
+        }
+
+        private string GetDirectorySize(string path)
+        {
+            try
+            {
+                var size = Directory.GetFiles(path, "*", SearchOption.AllDirectories).Sum(f => new FileInfo(f).Length);
+                if (size >= 1024 * 1024 * 1024)
+                    return $"{size / (1024 * 1024 * 1024):F2} GB";
+                if (size >= 1024 * 1024)
+                    return $"{size / (1024 * 1024):F2} MB";
+                return $"{size / 1024:F2} KB";
+            }
+            catch (Exception ex)
+            {
+                _loggingService.LogError("获取目录大小失败", ex);
                 return "未知";
             }
         }
@@ -259,10 +293,22 @@ namespace LemonSubtitleStudio.ViewModels
             var path = model.Category == "Whisper"
                 ? _modelManagerService.GetModelPath(model.Name)
                 : _modelManagerService.GetTranslationModelPath(model.Name);
-            if (File.Exists(path))
+
+            if (model.Category == "Whisper")
             {
-                File.Delete(path);
-                LoadAvailableModels();
+                if (File.Exists(path))
+                {
+                    File.Delete(path);
+                    LoadAvailableModels();
+                }
+            }
+            else
+            {
+                if (Directory.Exists(path))
+                {
+                    Directory.Delete(path, true);
+                    LoadAvailableModels();
+                }
             }
         }
 
@@ -299,6 +345,7 @@ namespace LemonSubtitleStudio.ViewModels
             _settingsService.DefaultLanguage = SelectedLanguage;
             _settingsService.UseGPU = UseGPU;
             _settingsService.HuggingFaceBaseUrl = HuggingFaceBaseUrl;
+            _settingsService.TranslationEngine = TranslationEngine;
             _settingsService.Save();
             
             LoadAvailableModels();
@@ -390,6 +437,28 @@ namespace LemonSubtitleStudio.ViewModels
 
         public event PropertyChangedEventHandler? PropertyChanged;
         public void RaiseProgressChanged() => OnPropertyChanged(nameof(ProgressText));
+        protected void OnPropertyChanged(string? propertyName = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
+    public class NamingConventionInfo : INotifyPropertyChanged
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string Example { get; set; } = string.Empty;
+
+        private bool _isSelected;
+        public bool IsSelected
+        {
+            get => _isSelected;
+            set
+            {
+                if (_isSelected == value) return;
+                _isSelected = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged(string? propertyName = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }

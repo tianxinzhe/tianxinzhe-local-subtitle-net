@@ -162,7 +162,7 @@
                                 <RowDefinition Height="*" />
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
-                            <MediaElement x:Name="VideoPlayer" Stretch="Uniform" LoadedBehavior="Manual" />
+                            <MediaElement x:Name="VideoPlayer" Source="{Binding SelectedMediaPath}" Stretch="Uniform" LoadedBehavior="Manual" />
                             <Border Grid.Row="1" Background="#1A1A2E" Padding="12,8" BorderBrush="#534433" BorderThickness="0,1,0,0">
                                 <StackPanel>
                                     <TextBlock Text="PROCESS TRACKING" Foreground="#D9C3AC" FontSize="10" FontWeight="Bold" Margin="0,0,0,6" />
@@ -173,11 +173,11 @@
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <StackPanel Orientation="Horizontal">
-                                            <materialDesign:PackIcon Kind="CheckCircle" Width="14" Height="14" Foreground="#4ADE80" Margin="0,0,4,0" VerticalAlignment="Center" />
-                                            <TextBlock Text="Audio Extraction" Foreground="#4ADE80" FontSize="11" VerticalAlignment="Center" />
+                                            <materialDesign:PackIcon Kind="CheckCircle" Width="14" Height="14" Foreground="{Binding AudioExtractionProgress, Converter={StaticResource ProgressToColorConverter}}" Margin="0,0,4,0" VerticalAlignment="Center" />
+                                            <TextBlock Text="Audio Extraction" Foreground="{Binding AudioExtractionProgress, Converter={StaticResource ProgressToColorConverter}}" FontSize="11" VerticalAlignment="Center" />
                                         </StackPanel>
-                                        <ProgressBar Grid.Column="1" Value="100" Maximum="100" Height="2" Margin="12,0" VerticalAlignment="Center" Background="#333348" Foreground="#4ADE80" BorderThickness="0" />
-                                        <TextBlock Grid.Column="2" Text="100%" Foreground="#4ADE80" FontSize="10" FontFamily="Consolas" VerticalAlignment="Center" />
+                                        <ProgressBar Grid.Column="1" Value="{Binding AudioExtractionProgress}" Maximum="100" Height="2" Margin="12,0" VerticalAlignment="Center" Background="#333348" Foreground="#4ADE80" BorderThickness="0" />
+                                        <TextBlock Grid.Column="2" Text="{Binding AudioExtractionProgress, StringFormat={}{0}%}" Foreground="{Binding AudioExtractionProgress, Converter={StaticResource ProgressToColorConverter}}" FontSize="10" FontFamily="Consolas" VerticalAlignment="Center" />
                                     </Grid>
                                     <Grid>
                                         <Grid.ColumnDefinitions>
@@ -186,11 +186,11 @@
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <StackPanel Orientation="Horizontal">
-                                            <materialDesign:PackIcon Kind="Sync" Width="14" Height="14" Foreground="#FFB95C" Margin="0,0,4,0" VerticalAlignment="Center" />
-                                            <TextBlock Text="ASR Recognition" Foreground="#FFB95C" FontSize="11" VerticalAlignment="Center" />
+                                            <materialDesign:PackIcon Kind="Sync" Width="14" Height="14" Foreground="{Binding AsrProgress, Converter={StaticResource ProgressToColorConverter}}" Margin="0,0,4,0" VerticalAlignment="Center" />
+                                            <TextBlock Text="ASR Recognition" Foreground="{Binding AsrProgress, Converter={StaticResource ProgressToColorConverter}}" FontSize="11" VerticalAlignment="Center" />
                                         </StackPanel>
-                                        <ProgressBar Grid.Column="1" Value="{Binding OverallProgress}" Maximum="100" Height="2" Margin="12,0" VerticalAlignment="Center" Background="#333348" Foreground="#FFA500" BorderThickness="0" />
-                                        <TextBlock Grid.Column="2" Text="{Binding OverallProgress, StringFormat={}{0}%}" Foreground="#FFB95C" FontSize="10" FontFamily="Consolas" VerticalAlignment="Center" />
+                                        <ProgressBar Grid.Column="1" Value="{Binding AsrProgress}" Maximum="100" Height="2" Margin="12,0" VerticalAlignment="Center" Background="#333348" Foreground="#FFA500" BorderThickness="0" />
+                                        <TextBlock Grid.Column="2" Text="{Binding AsrProgress, StringFormat={}{0}%}" Foreground="{Binding AsrProgress, Converter={StaticResource ProgressToColorConverter}}" FontSize="10" FontFamily="Consolas" VerticalAlignment="Center" />
                                     </Grid>
                                 </StackPanel>
                             </Border>
@@ -213,10 +213,7 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="SUBTITLE SCRIPT" Foreground="#D9C3AC" FontSize="10" FontWeight="Bold" />
-                                    <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                        <materialDesign:PackIcon Kind="Search" Width="14" Height="14" Foreground="#D9C3AC" Margin="0,0,8,0" />
-                                        <materialDesign:PackIcon Kind="Sort" Width="14" Height="14" Foreground="#D9C3AC" />
-                                    </StackPanel>
+                                    <TextBlock Grid.Column="1" Text="{Binding Subtitles.Count, StringFormat='{}{0} entries'}" Foreground="#606070" FontSize="10" FontFamily="Consolas" VerticalAlignment="Center" />
                                 </Grid>
                             </Border>
                             <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
@@ -261,7 +258,7 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Text="EVENT LOG" Foreground="#D9C3AC" FontSize="10" FontWeight="Bold" />
-                                <TextBlock Grid.Column="1" Text="3 Warnings • 0 Errors" Foreground="#606070" FontSize="10" />
+                                <TextBlock Grid.Column="1" Text="{Binding Logs.Count, StringFormat='{}{0} entries'}" Foreground="#606070" FontSize="10" />
                             </Grid>
                         </Border>
                         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="8">

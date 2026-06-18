@@ -75,7 +75,12 @@ namespace LemonSubtitleStudio.ViewModels
 
         public double OverallProgressPercent => OverallProgress * 0.01;
 
-        public string RemainingTimeFormatted { get; set; } = "--:--:--";
+        private string _remainingTimeFormatted = "--:--:--";
+        public string RemainingTimeFormatted
+        {
+            get => _remainingTimeFormatted;
+            set { _remainingTimeFormatted = value; OnPropertyChanged(); }
+        }
 
         private string _currentTaskInfo = string.Empty;
         public string CurrentTaskInfo
@@ -133,10 +138,13 @@ namespace LemonSubtitleStudio.ViewModels
                 task.Progress = 0;
             }
 
+            var sw = new System.Diagnostics.Stopwatch();
+
             foreach (var task in Tasks)
             {
                 CurrentTaskInfo = $"正在识别字幕: {task.FileName}";
                 _loggingService.Log($"识别字幕: {task.FileName}");
+                sw.Restart();
 
                 try
                 {
@@ -146,6 +154,17 @@ namespace LemonSubtitleStudio.ViewModels
                         {
                             task.Progress = p;
                             OverallProgress = (int)((Tasks.IndexOf(task) * 100 + p) / Tasks.Count);
+
+                            if (p > 0)
+                            {
+                                var elapsed = sw.Elapsed;
+                                var estimatedTotal = TimeSpan.FromMilliseconds(elapsed.TotalMilliseconds * 100.0 / p);
+                                var remaining = estimatedTotal - elapsed;
+                                if (remaining.TotalSeconds > 0)
+                                    RemainingTimeFormatted = remaining.ToString(@"hh\:mm\:ss");
+                                else
+                                    RemainingTimeFormatted = "00:00:00";
+                            }
                         });
                     });
 

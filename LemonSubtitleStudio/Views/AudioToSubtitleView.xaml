@@ -45,12 +45,7 @@
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,0,20,0">
                     <TextBlock Text="MODEL" Style="{StaticResource LabelCapsStyle}" Margin="0,0,8,0" VerticalAlignment="Center" />
-                    <Border Background="#333348" CornerRadius="4" Padding="8,4">
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="CloudDownload" Width="14" Height="14" Foreground="#FFA500" Margin="0,0,4,0" VerticalAlignment="Center" />
-                            <TextBlock Text="{Binding SelectedModel}" Foreground="#E2E0FC" FontSize="11" />
-                        </StackPanel>
-                    </Border>
+                    <ComboBox ItemsSource="{Binding AvailableModels}" SelectedItem="{Binding SelectedModel}" Width="120" Style="{StaticResource MaterialDesignFloatingHintComboBox}" />
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="OUTPUT" Style="{StaticResource LabelCapsStyle}" Margin="0,0,8,0" VerticalAlignment="Center" />
@@ -73,17 +68,16 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <Border Background="#28283D" Padding="12,8" BorderBrush="#534433" BorderThickness="0,0,0,1" CornerRadius="8,8,0,0">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="{Binding Tasks.Count, StringFormat={}Audio Queue ({0})}" Foreground="#E2E0FC" FontSize="14" FontWeight="Bold" />
-                            <Button Grid.Column="1" Background="Transparent" BorderThickness="0" Command="{Binding SelectFileCommand}" Cursor="Hand">
-                                <materialDesign:PackIcon Kind="AddCircle" Width="20" Height="20" Foreground="#FFA500" />
-                            </Button>
-                        </Grid>
+                    <Border Grid.Row="0" Margin="8" Padding="24,16" Background="#0C0C1F" BorderBrush="#534433" BorderThickness="1"
+                            AllowDrop="True" Drop="DropHandler" Cursor="Hand" CornerRadius="8">
+                        <Border.InputBindings>
+                            <MouseBinding MouseAction="LeftClick" Command="{Binding SelectFileCommand}" />
+                        </Border.InputBindings>
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <materialDesign:PackIcon Kind="CloudUpload" Width="32" Height="32" Foreground="#D9C3AC" Margin="0,0,0,8" HorizontalAlignment="Center" />
+                            <TextBlock Text="Drop audio files here" Foreground="#D9C3AC" FontSize="14" HorizontalAlignment="Center" />
+                            <TextBlock Text="MP3, WAV, FLAC, OGG" Foreground="#606070" FontSize="11" HorizontalAlignment="Center" Margin="0,4,0,0" />
+                        </StackPanel>
                     </Border>
                     <ScrollViewer Grid.Row="1" Margin="4,0,4,4" VerticalScrollBarVisibility="Auto">
                         <ItemsControl ItemsSource="{Binding Tasks}">
@@ -91,24 +85,29 @@
                                 <DataTemplate>
                                     <Border Margin="4,2" Padding="8,6" Background="#1E1E32" CornerRadius="0" BorderBrush="#2A2A3E" BorderThickness="0,0,0,1">
                                         <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="Auto" />
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
-                                            <Border Width="36" Height="36" CornerRadius="8" Background="#333348" Margin="0,0,8,0">
-                                                <materialDesign:PackIcon Kind="FileMusic" Width="18" Height="18" Foreground="#FFB95C" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            <Border Grid.Column="0" Width="36" Height="36" Background="#333348" CornerRadius="8" Margin="0,0,8,0">
+                                                <materialDesign:PackIcon Kind="FileMusic" Width="18" Height="18" Foreground="#FFB95C" />
                                             </Border>
                                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                                 <TextBlock Text="{Binding FileName}" Foreground="#E2E0FC" FontSize="12" FontWeight="Bold" TextTrimming="CharacterEllipsis" />
                                                 <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
                                                     <TextBlock Text="{Binding FileSizeFormatted}" Foreground="#606070" FontSize="10" Margin="0,0,8,0" />
-                                                    <TextBlock Text="{Binding Status}" Foreground="#FFB95C" FontSize="10" />
+                                                    <TextBlock Text="•" Foreground="#606070" FontSize="10" Margin="0,0,8,0" />
+                                                    <TextBlock Text="{Binding DurationFormatted}" Foreground="#606070" FontSize="10" />
                                                 </StackPanel>
                                             </StackPanel>
-                                            <Button Grid.Column="2" Background="Transparent" BorderThickness="0" Padding="4,0">
-                                                <materialDesign:PackIcon Kind="DotsVertical" Width="16" Height="16" Foreground="#D9C3AC" />
-                                            </Button>
+                                            <TextBlock Grid.Column="2" Text="{Binding Progress, StringFormat={}{0}%}" Foreground="#FFB95C" FontSize="11" FontFamily="Consolas" VerticalAlignment="Center" />
+                                            <ProgressBar Grid.Row="1" Grid.ColumnSpan="3" Value="{Binding Progress}" Maximum="100" Height="2" Margin="0,4,0,0"
+                                                         Background="#333348" Foreground="#FFA500" BorderThickness="0" />
                                         </Grid>
                                     </Border>
                                 </DataTemplate>
@@ -139,7 +138,7 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel>
                                 <TextBlock Text="CURRENT STATUS" Foreground="#D9C3AC" FontSize="10" FontWeight="Bold" />
-                                <TextBlock Text="Recognizing Speech..." Foreground="#FFB95C" FontSize="16" FontWeight="Bold" />
+                                <TextBlock Text="{Binding CurrentTaskInfo, FallbackValue='Ready'}" Foreground="#FFB95C" FontSize="16" FontWeight="Bold" />
                             </StackPanel>
                             <StackPanel Grid.Column="1" HorizontalAlignment="Right">
                                 <TextBlock Text="{Binding RemainingTimeFormatted, StringFormat={}Time Remaining: {0}}" Foreground="#D9C3AC" FontSize="11" />
@@ -191,7 +190,7 @@
                                     <materialDesign:PackIcon Kind="Terminal" Width="14" Height="14" Foreground="#D9C3AC" Margin="0,0,6,0" VerticalAlignment="Center" />
                                     <TextBlock Text="Processing Log" Foreground="#D9C3AC" FontSize="10" FontWeight="Bold" />
                                 </StackPanel>
-                                <TextBlock Grid.Column="1" Text="DEBUG_MODE=TRUE" Foreground="#FFB95C" FontSize="9" FontFamily="Consolas" Opacity="0.6" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" Text="{Binding Logs.Count, StringFormat='{}{0} entries'}" Foreground="#606070" FontSize="10" FontFamily="Consolas" VerticalAlignment="Center" />
                             </Grid>
                         </Border>
                         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="8">

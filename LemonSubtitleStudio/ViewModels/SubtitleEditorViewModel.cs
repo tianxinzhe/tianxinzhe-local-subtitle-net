@@ -68,7 +68,50 @@ namespace LemonSubtitleStudio.ViewModels
         public string EditEndTime
         {
             get => _editEndTime;
-            set { _editEndTime = value; OnPropertyChanged(); }
+            set 
+            { 
+                _editEndTime = value; 
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(DurationFormatted));
+                OnPropertyChanged(nameof(CpsFormatted));
+            }
+        }
+
+        public string DurationFormatted
+        {
+            get
+            {
+                try
+                {
+                    if (TimeSpan.TryParse(EditStartTime, out var start) && TimeSpan.TryParse(EditEndTime, out var end))
+                    {
+                        var duration = end - start;
+                        if (duration.TotalSeconds < 0) duration = TimeSpan.Zero;
+                        return $"{(int)duration.TotalMinutes:D2}:{duration.Seconds:D2}.{duration.Milliseconds / 10:D2}";
+                    }
+                }
+                catch { }
+                return "00:00.00";
+            }
+        }
+
+        public string CpsFormatted
+        {
+            get
+            {
+                try
+                {
+                    if (TimeSpan.TryParse(EditStartTime, out var start) && TimeSpan.TryParse(EditEndTime, out var end))
+                    {
+                        var duration = (end - start).TotalSeconds;
+                        if (duration <= 0) return "0.0";
+                        var textLength = SelectedSubtitle?.OriginalText?.Length ?? 0;
+                        return (textLength / duration).ToString("F1");
+                    }
+                }
+                catch { }
+                return "0.0";
+            }
         }
 
         private int _playbackProgress = 0;
@@ -89,7 +132,31 @@ namespace LemonSubtitleStudio.ViewModels
         public string TotalTime
         {
             get => _totalTime;
-            set { _totalTime = value; OnPropertyChanged(); }
+            set { _totalTime = value; OnPropertyChanged(); UpdateTimelineMarkers(); }
+        }
+
+        private ObservableCollection<string> _timelineMarkers = new ObservableCollection<string>();
+        public ObservableCollection<string> TimelineMarkers
+        {
+            get => _timelineMarkers;
+            set { _timelineMarkers = value; OnPropertyChanged(); }
+        }
+
+        private void UpdateTimelineMarkers()
+        {
+            TimelineMarkers.Clear();
+            if (!TimeSpan.TryParse(TotalTime, out var total)) return;
+            if (total.TotalSeconds <= 0) return;
+
+            int count = (int)Math.Ceiling(total.TotalMinutes / 5);
+            if (count < 2) count = 2;
+            if (count > 20) count = 20;
+
+            for (int i = 0; i <= count; i++)
+            {
+                var t = TimeSpan.FromSeconds(total.TotalSeconds * i / count);
+                TimelineMarkers.Add(t.ToString(@"hh\:mm\:ss"));
+            }
         }
 
         private string _statusMessage = string.Empty;
@@ -102,6 +169,7 @@ namespace LemonSubtitleStudio.ViewModels
         public DelegateCommand OpenMediaCommand { get; }
         public DelegateCommand OpenSubtitleCommand { get; }
         public DelegateCommand SaveCommand { get; }
+        public DelegateCommand ExportAllCommand { get; }
         public DelegateCommand AddSubtitleCommand { get; }
         public DelegateCommand DeleteSubtitleCommand { get; }
         public DelegateCommand PlayCommand { get; }
@@ -119,6 +187,7 @@ namespace LemonSubtitleStudio.ViewModels
             OpenMediaCommand = new DelegateCommand(OpenMedia);
             OpenSubtitleCommand = new DelegateCommand(OpenSubtitle);
             SaveCommand = new DelegateCommand(Save);
+            ExportAllCommand = new DelegateCommand(ExportAll);
             AddSubtitleCommand = new DelegateCommand(AddSubtitle);
             DeleteSubtitleCommand = new DelegateCommand(DeleteSubtitle);
             PlayCommand = new DelegateCommand(() => MediaPlayerCommand?.Invoke(this, new MediaPlayerCommandEventArgs(MediaCommand.Play)));
@@ -217,6 +286,45 @@ namespace LemonSubtitleStudio.ViewModels
             {
                 StatusMessage = $"保存失败: {ex.Message}";
                 _loggingService.LogError("保存字幕失败", ex);
+            }
+        }
+
+        private void ExportAll()
+        {
+            if (Subtitles.Count == 0)
+            {
+                StatusMessage = "没有可导出的字幕";
+                return;
+            }
+
+            var dialog = new Microsoft.Win32.SaveFileDialog
+            {
+                Filter = "SRT 文件|*.srt|VTT 文件|*.vtt",
+                DefaultExt = ".srt",
+                FileName = Path.GetFileNameWithoutExtension(CurrentFileName) + "_exported"
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                try
+                {
+                    var ext = Path.GetExtension(dialog.FileName).ToLower();
+                    if (ext == ".srt")
+                    {
+                        _subtitleService.SaveToSrt(dialog.FileName, Subtitles.ToList());
+                    }
+                    else if (ext == ".vtt")
+                    {
+                        _subtitleService.SaveToVtt(dialog.FileName, Subtitles.ToList());
+                    }
+                    StatusMessage = $"已导出 {Subtitles.Count} 条字幕";
+                    _loggingService.Log($"字幕已导出到: {dialog.FileName}");
+                }
+                catch (Exception ex)
+                {
+                    StatusMessage = $"导出失败: {ex.Message}";
+                    _loggingService.LogError("导出字幕失败", ex);
+                }
             }
         }
 

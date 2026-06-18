@@ -80,17 +80,16 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <Border Background="#28283D" Padding="12,8" BorderBrush="#534433" BorderThickness="0,0,0,1" CornerRadius="8,8,0,0">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="Extraction Queue" Foreground="#E2E0FC" FontSize="14" FontWeight="Bold" />
-                            <Border Grid.Column="1" Background="#294A77" CornerRadius="10" Padding="8,2">
-                                <TextBlock Text="{Binding PendingCount, StringFormat={}{0} Pending}" Foreground="#FFB95C" FontSize="10" FontWeight="Bold" />
-                            </Border>
-                        </Grid>
+                    <Border Grid.Row="0" Margin="8" Padding="24,16" Background="#0C0C1F" BorderBrush="#534433" BorderThickness="1"
+                            AllowDrop="True" Drop="DropHandler" Cursor="Hand" CornerRadius="8">
+                        <Border.InputBindings>
+                            <MouseBinding MouseAction="LeftClick" Command="{Binding SelectFileCommand}" />
+                        </Border.InputBindings>
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <materialDesign:PackIcon Kind="CloudUpload" Width="32" Height="32" Foreground="#D9C3AC" Margin="0,0,0,8" HorizontalAlignment="Center" />
+                            <TextBlock Text="Drop video files here" Foreground="#D9C3AC" FontSize="14" HorizontalAlignment="Center" />
+                            <TextBlock Text="MP4, MKV, MOV, AVI" Foreground="#606070" FontSize="11" HorizontalAlignment="Center" Margin="0,4,0,0" />
+                        </StackPanel>
                     </Border>
                     <ScrollViewer Grid.Row="1" Margin="4,0,4,4" VerticalScrollBarVisibility="Auto">
                         <ItemsControl ItemsSource="{Binding Tasks}">
@@ -101,35 +100,26 @@
                                             <Grid.RowDefinitions>
                                                 <RowDefinition Height="Auto" />
                                                 <RowDefinition Height="Auto" />
-                                                <RowDefinition Height="Auto" />
                                             </Grid.RowDefinitions>
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="Auto" />
-                                                    <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="Auto" />
-                                                </Grid.ColumnDefinitions>
-                                                <materialDesign:PackIcon Grid.Column="0" Kind="FileVideo" Width="20" Height="20" Foreground="#FFB95C" Margin="0,0,8,0" VerticalAlignment="Center" />
-                                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                                    <TextBlock Text="{Binding FileName}" Foreground="#E2E0FC" FontSize="12" FontWeight="Bold" TextTrimming="CharacterEllipsis" />
-                                                    <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
-                                                        <TextBlock Text="Size: " Foreground="#606070" FontSize="10" />
-                                                        <TextBlock Text="{Binding FileSizeFormatted}" Foreground="#606070" FontSize="10" Margin="0,0,8,0" />
-                                                        <TextBlock Text="Dur: " Foreground="#606070" FontSize="10" />
-                                                        <TextBlock Text="{Binding DurationFormatted}" Foreground="#606070" FontSize="10" />
-                                                    </StackPanel>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <Border Grid.Column="0" Width="36" Height="36" Background="#333348" CornerRadius="8" Margin="0,0,8,0">
+                                                <materialDesign:PackIcon Kind="FileVideo" Width="18" Height="18" Foreground="#FFB95C" />
+                                            </Border>
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding FileName}" Foreground="#E2E0FC" FontSize="12" FontWeight="Bold" TextTrimming="CharacterEllipsis" />
+                                                <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                                    <TextBlock Text="{Binding FileSizeFormatted}" Foreground="#606070" FontSize="10" Margin="0,0,8,0" />
+                                                    <TextBlock Text="•" Foreground="#606070" FontSize="10" Margin="0,0,8,0" />
+                                                    <TextBlock Text="{Binding DurationFormatted}" Foreground="#606070" FontSize="10" />
                                                 </StackPanel>
-                                                <TextBlock Grid.Column="2" Text="{Binding Progress, StringFormat={}{0}%}" Foreground="#FFB95C" FontSize="11" FontFamily="Consolas" VerticalAlignment="Center" />
-                                            </Grid>
-                                            <ProgressBar Grid.Row="1" Value="{Binding Progress}" Maximum="100" Height="2" Margin="0,4,0,2" Background="#333348" Foreground="#FFA500" BorderThickness="0" />
-                                            <Grid Grid.Row="2">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="Auto" />
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock Text="{Binding Status}" Foreground="#606070" FontSize="10" FontFamily="Consolas" />
-                                                <TextBlock Grid.Column="1" Text="{Binding RemainingTimeFormatted, StringFormat={}Remaining: {0}}" Foreground="#606070" FontSize="10" FontFamily="Consolas" />
-                                            </Grid>
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="2" Text="{Binding Progress, StringFormat={}{0}%}" Foreground="#FFB95C" FontSize="11" FontFamily="Consolas" VerticalAlignment="Center" />
+                                            <ProgressBar Grid.Row="1" Grid.ColumnSpan="3" Value="{Binding Progress}" Maximum="100" Height="2" Margin="0,4,0,0"
+                                                         Background="#333348" Foreground="#FFA500" BorderThickness="0" />
                                         </Grid>
                                     </Border>
                                 </DataTemplate>
@@ -155,26 +145,22 @@
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24">
-                            <Border Height="120" CornerRadius="8" Margin="0,0,0,24" Padding="12" Background="#1A1A2E">
-                                <ItemsControl ItemsSource="{Binding WaveformData}">
-                                    <ItemsControl.ItemsPanel>
-                                        <ItemsPanelTemplate>
-                                            <VirtualizingStackPanel Orientation="Horizontal" IsItemsHost="True" VerticalAlignment="Bottom" />
-                                        </ItemsPanelTemplate>
-                                    </ItemsControl.ItemsPanel>
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <Border Width="4" Background="#FFA500" CornerRadius="2" Opacity="0.6" VerticalAlignment="Bottom" Height="{Binding}" Margin="1,0" />
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </Border>
+                            <StackPanel Visibility="{Binding HasCompletedTask, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <Border Background="#1A1A2E" CornerRadius="8" Padding="16" Margin="0,0,0,16">
+                                    <StackPanel>
+                                        <TextBlock Text="Completed File" Foreground="#FFB95C" FontSize="14" FontWeight="Bold" Margin="0,0,0,8" />
+                                        <TextBlock Text="{Binding LastCompletedFileName}" Foreground="#E2E0FC" FontSize="12" TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="Output:" Foreground="#D9C3AC" FontSize="11" Margin="0,8,0,2" />
+                                        <TextBlock Text="{Binding LastCompletedOutputPath}" Foreground="#606070" FontSize="11" TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                <Button Content="⏮" Background="Transparent" BorderThickness="0" Foreground="#D9C3AC" FontSize="20" Width="40" Height="40" Margin="4" />
+                                <Button Content="⏮" Background="Transparent" BorderThickness="0" Foreground="#D9C3AC" FontSize="20" Width="40" Height="40" Margin="4" Command="{Binding SkipBackCommand}" />
                                 <Border Width="56" Height="56" CornerRadius="28" Background="#FFA500" Margin="12,0">
                                     <Button Content="▶" Background="Transparent" BorderThickness="0" Foreground="#462A00" FontSize="24" Command="{Binding PlayCommand}" />
                                 </Border>
-                                <Button Content="⏭" Background="Transparent" BorderThickness="0" Foreground="#D9C3AC" FontSize="20" Width="40" Height="40" Margin="4" />
+                                <Button Content="⏭" Background="Transparent" BorderThickness="0" Foreground="#D9C3AC" FontSize="20" Width="40" Height="40" Margin="4" Command="{Binding SkipForwardCommand}" />
                             </StackPanel>
                         </StackPanel>
                     </Grid>
@@ -195,8 +181,7 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Text="EXTRACTION LOG" Foreground="#D9C3AC" FontSize="10" FontWeight="Bold" />
                                 <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                    <TextBlock Text="0 ERRORS" Foreground="#FFB95C" FontSize="10" FontFamily="Consolas" Margin="0,0,8,0" />
-                                    <TextBlock Text="2 WARNINGS" Foreground="#98DDFF" FontSize="10" FontFamily="Consolas" />
+                                    <TextBlock Text="{Binding Logs.Count, StringFormat='{}{0} entries'}" Foreground="#FFB95C" FontSize="10" FontFamily="Consolas" />
                                 </StackPanel>
                             </Grid>
                         </Border>

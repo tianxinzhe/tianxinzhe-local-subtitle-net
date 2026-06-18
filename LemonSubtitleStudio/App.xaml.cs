@@ -10,6 +10,7 @@ using LemonSubtitleStudio.Services;
 using System;
 using System.IO;
 using System.Windows.Threading;
+using Xabe.FFmpeg;
 
 namespace LemonSubtitleStudio
 {
@@ -57,6 +58,11 @@ namespace LemonSubtitleStudio
         {
             try
             {
+                var ffmpegPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "ffmpeg");
+                if (File.Exists(Path.Combine(ffmpegPath, "ffmpeg.exe")))
+                {
+                    FFmpeg.SetExecutablesPath(ffmpegPath);
+                }
                 base.OnStartup(e);
             }
             catch (Exception ex)

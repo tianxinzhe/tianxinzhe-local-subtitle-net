@@ -20,10 +20,14 @@
                     <Border Grid.Column="1" Background="#1E1E32" CornerRadius="6" Padding="4">
                         <StackPanel Orientation="Horizontal">
                             <Button Content="Speech Recognition" Padding="10,4" FontSize="11" FontWeight="Bold"
-                                    Background="#294A77" Foreground="#FFB95C" BorderThickness="0" Margin="2,0"
+                                    Background="{Binding ModelCategory, Converter={StaticResource CategoryToBackgroundConverter}, ConverterParameter=Speech}"
+                                    Foreground="{Binding ModelCategory, Converter={StaticResource CategoryToForegroundConverter}, ConverterParameter=Speech}"
+                                    BorderThickness="0" Margin="2,0"
                                     Command="{Binding SwitchModelCategoryCommand}" CommandParameter="Speech" />
                             <Button Content="Translation" Padding="10,4" FontSize="11" FontWeight="Bold"
-                                    Background="Transparent" Foreground="#D9C3AC" BorderThickness="0" Margin="2,0"
+                                    Background="{Binding ModelCategory, Converter={StaticResource CategoryToBackgroundConverter}, ConverterParameter=Translation}"
+                                    Foreground="{Binding ModelCategory, Converter={StaticResource CategoryToForegroundConverter}, ConverterParameter=Translation}"
+                                    BorderThickness="0" Margin="2,0"
                                     Command="{Binding SwitchModelCategoryCommand}" CommandParameter="Translation" />
                         </StackPanel>
                     </Border>
@@ -163,6 +167,29 @@
                         <TextBox Text="{Binding HuggingFaceBaseUrl}" Style="{StaticResource MaterialDesignFloatingHintTextBox}" />
                         <TextBlock Text="Default: https://huggingface.co | China mirror: https://hf-mirror.com" Foreground="#606070" FontSize="10" Margin="0,4,0,0" />
                     </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- Translation Engine -->
+            <StackPanel Margin="0,0,0,28">
+                <Border BorderBrush="#534433" BorderThickness="0,0,0,1" Padding="0,0,0,8" Margin="0,0,0,16">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="Translate" Width="20" Height="20" Foreground="#FFA500" Margin="0,0,8,0" VerticalAlignment="Center" />
+                        <TextBlock Text="Translation Engine" FontSize="16" FontWeight="Bold" Foreground="#E2E0FC" />
+                    </StackPanel>
+                </Border>
+                <Border Background="#1E1E32" BorderBrush="#534433" BorderThickness="1" CornerRadius="8" Padding="20">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <ComboBox ItemsSource="{Binding TranslationEngines}" SelectedItem="{Binding TranslationEngine, Mode=TwoWay}" Width="200" Style="{StaticResource MaterialDesignFloatingHintComboBox}" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="2" TextWrapping="Wrap" Foreground="#606070" FontSize="11" VerticalAlignment="Center">
+                                Auto: Try ONNX model first, fall back to Web API. ONNX (Local): Use installed ONNX model only. Web API: Use online translation service.
+                        </TextBlock>
+                    </Grid>
                 </Border>
             </StackPanel>
 

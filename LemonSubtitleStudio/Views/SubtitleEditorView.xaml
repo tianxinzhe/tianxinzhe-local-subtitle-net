@@ -120,12 +120,18 @@
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
                 <Border Grid.Row="0" BorderBrush="#534433" BorderThickness="0,0,0,1" Padding="8,0">
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="00:12:30" Foreground="#D9C3AC" FontSize="10" FontFamily="Consolas" Margin="0,0,32,0" />
-                        <TextBlock Text="00:12:40" Foreground="#D9C3AC" FontSize="10" FontFamily="Consolas" Margin="0,0,32,0" />
-                        <TextBlock Text="00:12:50" Foreground="#FFB95C" FontSize="10" FontFamily="Consolas" Margin="0,0,32,0" />
-                        <TextBlock Text="00:13:00" Foreground="#D9C3AC" FontSize="10" FontFamily="Consolas" />
-                    </StackPanel>
+                    <ItemsControl ItemsSource="{Binding TimelineMarkers}" Margin="0">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" Foreground="#D9C3AC" FontSize="10" FontFamily="Consolas" Margin="0,0,28,0" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                 </Border>
                 <ItemsControl Grid.Row="1" ItemsSource="{Binding Subtitles}" Margin="8,4">
                     <ItemsControl.ItemsPanel>
@@ -161,16 +167,7 @@
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <Border Background="#28283D" Padding="12,6" BorderBrush="#534433" BorderThickness="0,0,0,1" CornerRadius="8,8,0,0">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="ORIGINAL" Foreground="#D9C3AC" FontSize="10" FontWeight="Bold" />
-                            <Button Grid.Column="1" Background="Transparent" BorderThickness="0" Padding="4,0">
-                                <materialDesign:PackIcon Kind="DotsVertical" Width="14" Height="14" Foreground="#D9C3AC" />
-                            </Button>
-                        </Grid>
+                        <TextBlock Text="ORIGINAL" Foreground="#D9C3AC" FontSize="10" FontWeight="Bold" />
                     </Border>
                     <TextBox Grid.Row="1" Text="{Binding SelectedSubtitle.OriginalText, Mode=TwoWay}"
                              Background="Transparent" Foreground="#E2E0FC" BorderThickness="0"
@@ -189,17 +186,7 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
                     <Border Background="#28283D" Padding="12,6" BorderBrush="#534433" BorderThickness="0,0,0,1" CornerRadius="8,8,0,0">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="TRANSLATION" Foreground="#FFA500" FontSize="10" FontWeight="Bold" />
-                            <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="AutoFix" Width="14" Height="14" Foreground="#D9C3AC" Margin="0,0,8,0" />
-                                <materialDesign:PackIcon Kind="Spellcheck" Width="14" Height="14" Foreground="#D9C3AC" />
-                            </StackPanel>
-                        </Grid>
+                        <TextBlock Text="TRANSLATION" Foreground="#FFA500" FontSize="10" FontWeight="Bold" />
                     </Border>
                     <Grid Grid.Row="1" Margin="12,8,12,4">
                         <Grid.ColumnDefinitions>

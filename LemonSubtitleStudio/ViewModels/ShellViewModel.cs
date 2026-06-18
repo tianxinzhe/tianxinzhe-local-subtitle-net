@@ -16,8 +16,26 @@ namespace LemonSubtitleStudio.ViewModels
         private bool _disposed = false;
 
         public DelegateCommand<string> NavigateCommand { get; }
+        public DelegateCommand CheckForUpdatesCommand { get; }
         public ObservableCollection<string> Languages { get; }
         public string SelectedLanguage { get; set; }
+
+        public string AppVersion { get; } = GetAppVersion();
+
+        private static string GetAppVersion()
+        {
+            try
+            {
+                var assembly = System.Reflection.Assembly.GetEntryAssembly();
+                if (assembly != null)
+                {
+                    var ver = assembly.GetName().Version;
+                    if (ver != null) return $"v{ver.Major}.{ver.Minor}.{ver.Build}";
+                }
+            }
+            catch { }
+            return "v1.0.0";
+        }
 
         private string _memoryUsage = "0MB";
         public string MemoryUsage
@@ -44,6 +62,7 @@ namespace LemonSubtitleStudio.ViewModels
         {
             _regionManager = regionManager;
             NavigateCommand = new DelegateCommand<string>(Navigate);
+            CheckForUpdatesCommand = new DelegateCommand(CheckForUpdates);
             Languages = new ObservableCollection<string> { "中文", "English", "日本語", "한국어" };
             SelectedLanguage = "中文";
 
@@ -112,6 +131,15 @@ namespace LemonSubtitleStudio.ViewModels
                 System.Windows.MessageBox.Show($"导航异常: {ex.Message}", "错误", 
                     System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             }
+        }
+
+        private void CheckForUpdates()
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "https://github.com/tianxinzhe/tianxinzhe-local-subtitle-net/releases",
+                UseShellExecute = true
+            });
         }
 
         

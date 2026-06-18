@@ -51,44 +51,105 @@ namespace LemonSubtitleStudio.Services
 
         public string GetTranslationModelPath(string modelName)
         {
-            return Path.Combine(_settingsService.ModelStoragePath, "onnx", $"{modelName}.onnx");
+            return Path.Combine(_settingsService.ModelStoragePath, "onnx", modelName);
         }
 
         public async Task DownloadTranslationModelAsync(string modelName, IProgress<int> progress)
         {
-            var modelPath = GetTranslationModelPath(modelName);
-            var directory = Path.GetDirectoryName(modelPath);
+            var modelDir = GetTranslationModelPath(modelName);
 
-            if (!Directory.Exists(directory))
-                Directory.CreateDirectory(directory!);
+            if (!Directory.Exists(modelDir))
+                Directory.CreateDirectory(modelDir);
 
-            var url = GetTranslationModelDownloadUrl(modelName);
-            var tempPath = modelPath + ".tmp";
+            var urls = GetTranslationModelDownloadUrls(modelName);
+            var tempDir = modelDir + ".tmp";
+
             try
             {
-                await DownloadFileAsync(url, tempPath, progress);
-                if (File.Exists(modelPath)) File.Delete(modelPath);
-                File.Move(tempPath, modelPath);
+                if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
+                Directory.CreateDirectory(tempDir);
+
+                int totalFiles = urls.Count;
+                int completedFiles = 0;
+
+                foreach (var (fileName, url) in urls)
+                {
+                    var destPath = Path.Combine(tempDir, fileName);
+                    var fileProgress = new Progress<int>(p =>
+                    {
+                        progress?.Report((completedFiles * 100 + p) / totalFiles);
+                    });
+                    await DownloadFileAsync(url, destPath, fileProgress);
+                    completedFiles++;
+                }
+
+                if (Directory.Exists(modelDir)) Directory.Delete(modelDir, true);
+                Directory.Move(tempDir, modelDir);
             }
             catch
             {
-                if (File.Exists(tempPath)) File.Delete(tempPath);
+                if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
                 throw;
             }
         }
 
-        private string GetTranslationModelDownloadUrl(string modelName)
+        private List<(string FileName, string Url)> GetTranslationModelDownloadUrls(string modelName)
         {
             var baseUrl = _settingsService.HuggingFaceBaseUrl;
-            return modelName switch
+            var urls = new List<(string, string)>();
+
+            if (modelName.StartsWith("marianmt-"))
             {
-                "nllb-200-distilled-600M" => $"{baseUrl}/facebook/nllb-200-distilled-600M/resolve/main/model.onnx",
-                "m2m100-418M" => $"{baseUrl}/Xenova/m2m100_418M/resolve/main/onnx/model.onnx",
-                "translate-gemma-4b" => $"{baseUrl}/google/translate-gemma-4b/resolve/main/model.onnx",
-                _ when modelName.StartsWith("marianmt-") =>
-                    $"{baseUrl}/Helsinki-NLP/opus-mt-{modelName.Replace("marianmt-", "")}/resolve/main/onnx/model.onnx",
-                _ => throw new ArgumentException($"Unknown translation model: {modelName}")
-            };
+                var langPair = modelName.Replace("marianmt-", "");
+                var repo = $"Xenova/opus-mt-{langPair}";
+                urls.Add(("encoder_model.onnx", $"{baseUrl}/{repo}/resolve/main/onnx/encoder_model.onnx"));
+                urls.Add(("decoder_model.onnx", $"{baseUrl}/{repo}/resolve/main/onnx/decoder_model.onnx"));
+                urls.Add(("tokenizer.json", $"{baseUrl}/{repo}/resolve/main/tokenizer.json"));
+                urls.Add(("vocab.json", $"{baseUrl}/{repo}/resolve/main/vocab.json"));
+                urls.Add(("source.spm", $"{baseUrl}/{repo}/resolve/main/source.spm"));
+                urls.Add(("target.spm", $"{baseUrl}/{repo}/resolve/main/target.spm"));
+                urls.Add(("config.json", $"{baseUrl}/{repo}/resolve/main/config.json"));
+                urls.Add(("generation_config.json", $"{baseUrl}/{repo}/resolve/main/generation_config.json"));
+                urls.Add(("special_tokens_map.json", $"{baseUrl}/{repo}/resolve/main/special_tokens_map.json"));
+                urls.Add(("tokenizer_config.json", $"{baseUrl}/{repo}/resolve/main/tokenizer_config.json"));
+            }
+            else if (modelName == "nllb-200-distilled-600M")
+            {
+                var repo = "lopatnov/nllb-200-distilled-600M-onnx";
+                urls.Add(("encoder_model.onnx", $"{baseUrl}/{repo}/resolve/main/encoder_model.onnx"));
+                urls.Add(("encoder_model.onnx.data", $"{baseUrl}/{repo}/resolve/main/encoder_model.onnx.data"));
+                urls.Add(("decoder_model.onnx", $"{baseUrl}/{repo}/resolve/main/decoder_model.onnx"));
+                urls.Add(("decoder_model.onnx.data", $"{baseUrl}/{repo}/resolve/main/decoder_model.onnx.data"));
+                urls.Add(("tokenizer.json", $"{baseUrl}/{repo}/resolve/main/tokenizer.json"));
+                urls.Add(("sentencepiece.bpe.model", $"{baseUrl}/{repo}/resolve/main/sentencepiece.bpe.model"));
+                urls.Add(("config.json", $"{baseUrl}/{repo}/resolve/main/config.json"));
+                urls.Add(("generation_config.json", $"{baseUrl}/{repo}/resolve/main/generation_config.json"));
+                urls.Add(("special_tokens_map.json", $"{baseUrl}/{repo}/resolve/main/special_tokens_map.json"));
+                urls.Add(("tokenizer_config.json", $"{baseUrl}/{repo}/resolve/main/tokenizer_config.json"));
+            }
+            else if (modelName == "m2m100-418M")
+            {
+                var repo = "lopatnov/m2m100_418M-onnx";
+                urls.Add(("encoder_model.onnx", $"{baseUrl}/{repo}/resolve/main/encoder_model.onnx"));
+                urls.Add(("decoder_model.onnx", $"{baseUrl}/{repo}/resolve/main/decoder_model.onnx"));
+                urls.Add(("vocab.json", $"{baseUrl}/{repo}/resolve/main/vocab.json"));
+                urls.Add(("sentencepiece.bpe.model", $"{baseUrl}/{repo}/resolve/main/sentencepiece.bpe.model"));
+                urls.Add(("config.json", $"{baseUrl}/{repo}/resolve/main/config.json"));
+                urls.Add(("generation_config.json", $"{baseUrl}/{repo}/resolve/main/generation_config.json"));
+                urls.Add(("special_tokens_map.json", $"{baseUrl}/{repo}/resolve/main/special_tokens_map.json"));
+                urls.Add(("tokenizer_config.json", $"{baseUrl}/{repo}/resolve/main/tokenizer_config.json"));
+                urls.Add(("added_tokens.json", $"{baseUrl}/{repo}/resolve/main/added_tokens.json"));
+            }
+            else if (modelName == "translate-gemma-4b")
+            {
+                throw new ArgumentException("translate-gemma-4b is a gated model and requires HuggingFace authentication. Please use a different model.");
+            }
+            else
+            {
+                throw new ArgumentException($"Unknown translation model: {modelName}");
+            }
+
+            return urls;
         }
 
         private async Task DownloadFileAsync(string url, string destPath, IProgress<int> progress)

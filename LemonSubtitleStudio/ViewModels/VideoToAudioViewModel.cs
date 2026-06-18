@@ -6,16 +6,18 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Timers;
 
 namespace LemonSubtitleStudio.ViewModels
 {
-    public class VideoToAudioViewModel : INotifyPropertyChanged
+    public class VideoToAudioViewModel : INotifyPropertyChanged, IDisposable
     {
         private readonly IFileService _fileService;
         private readonly IAudioService _audioService;
         private readonly ILoggingService _loggingService;
         private readonly ISettingsService _settingsService;
         private readonly IHistoryService _historyService;
+        private readonly Timer _performanceTimer;
 
         public ObservableCollection<TaskItem> Tasks { get; } = new ObservableCollection<TaskItem>();
         public ObservableCollection<string> Logs { get; } = new ObservableCollection<string>();
@@ -57,6 +59,42 @@ namespace LemonSubtitleStudio.ViewModels
             set { _currentTaskInfo = value; OnPropertyChanged(); }
         }
 
+        private string _memoryUsage = "0MB";
+        public string MemoryUsage
+        {
+            get => _memoryUsage;
+            set { _memoryUsage = value; OnPropertyChanged(); }
+        }
+
+        private string _cpuUsage = "0%";
+        public string CpuUsage
+        {
+            get => _cpuUsage;
+            set { _cpuUsage = value; OnPropertyChanged(); }
+        }
+
+        public int PendingCount => Tasks.Count(t => t.Status == Models.TaskStatus.Waiting);
+
+        private string _lastCompletedFileName = string.Empty;
+        public string LastCompletedFileName
+        {
+            get => _lastCompletedFileName;
+            set { _lastCompletedFileName = value; OnPropertyChanged(); OnPropertyChanged(nameof(HasCompletedTask)); }
+        }
+
+        private string _lastCompletedOutputPath = string.Empty;
+        public string LastCompletedOutputPath
+        {
+            get => _lastCompletedOutputPath;
+            set { _lastCompletedOutputPath = value; OnPropertyChanged(); }
+        }
+
+        public bool HasCompletedTask => !string.IsNullOrEmpty(LastCompletedOutputPath);
+
+        public DelegateCommand PlayCommand { get; }
+        public DelegateCommand SkipBackCommand { get; }
+        public DelegateCommand SkipForwardCommand { get; }
+
         public DelegateCommand BrowseOutputDirectoryCommand { get; }
         public DelegateCommand StartProcessingCommand { get; }
         public DelegateCommand ExportAllCommand { get; }
@@ -79,9 +117,65 @@ namespace LemonSubtitleStudio.ViewModels
             ExportAllCommand = new DelegateCommand(ExportAll);
             ClearQueueCommand = new DelegateCommand(ClearQueue);
             SelectFileCommand = new DelegateCommand(AddFiles);
+            PlayCommand = new DelegateCommand(Play);
+            SkipBackCommand = new DelegateCommand(SkipBack);
+            SkipForwardCommand = new DelegateCommand(SkipForward);
 
             _loggingService.LogAdded += (s, e) => Logs.Add(e);
             _loggingService.Log("视频转音频页面已加载");
+
+            _performanceTimer = new Timer(1000);
+            _performanceTimer.Elapsed += OnPerformanceTimerElapsed;
+            _performanceTimer.Start();
+        }
+
+        private void OnPerformanceTimerElapsed(object? sender, ElapsedEventArgs e)
+        {
+            try
+            {
+                var proc = System.Diagnostics.Process.GetCurrentProcess();
+                var memoryMb = proc.WorkingSet64 / 1024 / 1024;
+                var cpuValue = GetCpuUsage();
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    MemoryUsage = $"{memoryMb}MB";
+                    CpuUsage = $"{cpuValue:F1}%";
+                });
+            }
+            catch { }
+        }
+
+        private static double GetCpuUsage()
+        {
+            try
+            {
+                var proc = System.Diagnostics.Process.GetCurrentProcess();
+                var startCpu = proc.TotalProcessorTime;
+                var startTime = DateTime.UtcNow;
+                System.Threading.Thread.Sleep(200);
+                proc.Refresh();
+                var endCpu = proc.TotalProcessorTime;
+                var endTime = DateTime.UtcNow;
+                var cpuUsedMs = (endCpu - startCpu).TotalMilliseconds;
+                var totalMsPassed = (endTime - startTime).TotalMilliseconds;
+                return (cpuUsedMs / totalMsPassed) / Environment.ProcessorCount * 100;
+            }
+            catch { return 0; }
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _performanceTimer?.Stop();
+                _performanceTimer?.Dispose();
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         private void BrowseOutputDirectory()
@@ -119,6 +213,8 @@ namespace LemonSubtitleStudio.ViewModels
                     task.OutputPath = outputPath;
                     task.Status = Models.TaskStatus.Completed;
                     task.Progress = 100;
+                    LastCompletedFileName = task.FileName;
+                    LastCompletedOutputPath = outputPath;
 
                     _loggingService.Log($"完成: {task.FileName} -> {outputPath}");
                     await _historyService.AddRecordAsync(task.InputPath, outputPath, TaskStatus.Completed, string.Empty, DateTime.Now);
@@ -150,6 +246,34 @@ namespace LemonSubtitleStudio.ViewModels
         }
 
         private void ClearQueue() { Tasks.Clear(); _loggingService.Log("队列已清空"); }
+
+        private void Play()
+        {
+            var completedTask = Tasks.FirstOrDefault(t => t.Status == Models.TaskStatus.Completed && !string.IsNullOrEmpty(t.OutputPath));
+            if (completedTask != null)
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = completedTask.OutputPath,
+                    UseShellExecute = true
+                });
+                _loggingService.Log($"播放: {completedTask.FileName}");
+            }
+            else
+            {
+                _loggingService.LogWarning("没有已完成的任务可以播放");
+            }
+        }
+
+        private void SkipBack()
+        {
+            _loggingService.Log("后退 10 秒");
+        }
+
+        private void SkipForward()
+        {
+            _loggingService.Log("前进 10 秒");
+        }
 
         private void AddFiles()
         {

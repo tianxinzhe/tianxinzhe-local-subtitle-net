@@ -89,4 +89,7 @@
     <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter" />
     <converters:InverseBoolConverter x:Key="InverseBoolConverter" />
     <converters:EqualityConverter x:Key="EqualityConverter" />
+    <converters:CategoryToBackgroundConverter x:Key="CategoryToBackgroundConverter" />
+    <converters:CategoryToForegroundConverter x:Key="CategoryToForegroundConverter" />
+    <converters:ProgressToColorConverter x:Key="ProgressToColorConverter" />
 </ResourceDictionary>

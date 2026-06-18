@@ -101,4 +101,56 @@ namespace LemonSubtitleStudio.Converters
             return (bool)value ? parameter?.ToString() : Binding.DoNothing;
         }
     }
+
+    public class CategoryToBackgroundConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            var currentCategory = value?.ToString() ?? "";
+            var buttonCategory = parameter?.ToString() ?? "";
+            bool isSelected = (currentCategory == "Whisper 模型" && buttonCategory == "Speech") ||
+                              (currentCategory == "翻译模型" && buttonCategory == "Translation");
+            return isSelected ? "#294A77" : "Transparent";
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public class CategoryToForegroundConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            var currentCategory = value?.ToString() ?? "";
+            var buttonCategory = parameter?.ToString() ?? "";
+            bool isSelected = (currentCategory == "Whisper 模型" && buttonCategory == "Speech") ||
+                              (currentCategory == "翻译模型" && buttonCategory == "Translation");
+            return isSelected ? "#FFB95C" : "#D9C3AC";
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public class ProgressToColorConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is int progress)
+            {
+                if (progress >= 100) return "#4ADE80";
+                if (progress > 0) return "#FFA500";
+            }
+            return "#606070";
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
 }

@@ -8,11 +8,12 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Timers;
 using TaskStatusEnum = LemonSubtitleStudio.Models.TaskStatus;
 
 namespace LemonSubtitleStudio.ViewModels
 {
-    public class VideoToSubtitleViewModel : INotifyPropertyChanged, INavigationAware
+    public class VideoToSubtitleViewModel : INotifyPropertyChanged, INavigationAware, IDisposable
     {
         private readonly IFileService _fileService;
         private readonly IAudioService _audioService;
@@ -22,6 +23,7 @@ namespace LemonSubtitleStudio.ViewModels
         private readonly ISettingsService _settingsService;
         private readonly IRegionManager _regionManager;
         private readonly IHistoryService _historyService;
+        private readonly Timer _performanceTimer;
 
         public ObservableCollection<TaskItem> Tasks { get; } = new ObservableCollection<TaskItem>();
         public ObservableCollection<SubtitleItem> Subtitles { get; } = new ObservableCollection<SubtitleItem>();
@@ -80,6 +82,25 @@ namespace LemonSubtitleStudio.ViewModels
             set { _overallProgress = value; OnPropertyChanged(); }
         }
 
+        private int _audioExtractionProgress = 0;
+        public int AudioExtractionProgress
+        {
+            get => _audioExtractionProgress;
+            set { _audioExtractionProgress = value; OnPropertyChanged(); OnPropertyChanged(nameof(AudioExtractionStatus)); OnPropertyChanged(nameof(AudioExtractionIconKind)); }
+        }
+
+        private int _asrProgress = 0;
+        public int AsrProgress
+        {
+            get => _asrProgress;
+            set { _asrProgress = value; OnPropertyChanged(); OnPropertyChanged(nameof(AsrStatus)); OnPropertyChanged(nameof(AsrIconKind)); }
+        }
+
+        public string AudioExtractionStatus => AudioExtractionProgress >= 100 ? "Complete" : (AudioExtractionProgress > 0 ? "Running" : "Pending");
+        public string AudioExtractionIconKind => AudioExtractionProgress >= 100 ? "CheckCircle" : (AudioExtractionProgress > 0 ? "Sync" : "CircleOutline");
+        public string AsrStatus => AsrProgress >= 100 ? "Complete" : (AsrProgress > 0 ? "Running" : "Pending");
+        public string AsrIconKind => AsrProgress >= 100 ? "CheckCircle" : (AsrProgress > 0 ? "Sync" : "CircleOutline");
+
         private string _currentTaskInfo = string.Empty;
         public string CurrentTaskInfo
         {
@@ -130,6 +151,59 @@ namespace LemonSubtitleStudio.ViewModels
 
             _loggingService.LogAdded += (s, e) => Logs.Add(e);
             _loggingService.Log("视频转字幕页面已加载");
+
+            _performanceTimer = new Timer(1000);
+            _performanceTimer.Elapsed += OnPerformanceTimerElapsed;
+            _performanceTimer.Start();
+        }
+
+        private void OnPerformanceTimerElapsed(object? sender, ElapsedEventArgs e)
+        {
+            try
+            {
+                var proc = System.Diagnostics.Process.GetCurrentProcess();
+                var memoryMb = proc.WorkingSet64 / 1024 / 1024;
+                var cpuValue = GetCpuUsage();
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    MemoryUsage = $"{memoryMb}MB";
+                    CpuUsage = $"{cpuValue:F1}%";
+                });
+            }
+            catch { }
+        }
+
+        private static double GetCpuUsage()
+        {
+            try
+            {
+                var proc = System.Diagnostics.Process.GetCurrentProcess();
+                var startCpu = proc.TotalProcessorTime;
+                var startTime = DateTime.UtcNow;
+                System.Threading.Thread.Sleep(200);
+                proc.Refresh();
+                var endCpu = proc.TotalProcessorTime;
+                var endTime = DateTime.UtcNow;
+                var cpuUsedMs = (endCpu - startCpu).TotalMilliseconds;
+                var totalMsPassed = (endTime - startTime).TotalMilliseconds;
+                return (cpuUsedMs / totalMsPassed) / Environment.ProcessorCount * 100;
+            }
+            catch { return 0; }
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _performanceTimer?.Stop();
+                _performanceTimer?.Dispose();
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         private void BrowseOutputDirectory()
@@ -164,11 +238,16 @@ namespace LemonSubtitleStudio.ViewModels
                 {
                     task.Progress = 0;
                     task.Status = TaskStatusEnum.Processing;
+
+                    AudioExtractionProgress = 0;
+                    AsrProgress = 0;
+
                     CurrentTaskInfo = $"提取音频: {task.FileName}";
                     _loggingService.Log("阶段1/3: 提取音频");
 
                     var wavPath = await _audioService.ConvertToWavAsync(task.InputPath, OutputDirectory);
                     task.Progress = 33;
+                    AudioExtractionProgress = 100;
 
                     CurrentTaskInfo = $"语音识别: {task.FileName}";
                     _loggingService.Log("阶段2/3: 语音识别");
@@ -177,8 +256,8 @@ namespace LemonSubtitleStudio.ViewModels
                     {
                         System.Windows.Application.Current.Dispatcher.Invoke(() =>
                         {
+                            AsrProgress = p;
                             task.Progress = 33 + (int)(p * 0.66);
-                            OverallProgress = (int)((Tasks.IndexOf(task) * 100 + task.Progress) / Tasks.Count);
                         });
                     });
 

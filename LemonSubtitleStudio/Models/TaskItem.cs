@@ -41,6 +41,9 @@ namespace LemonSubtitleStudio.Models
             }
         }
 
+        public string DurationFormatted => "00:00";
+        public string RemainingTimeFormatted => "--:--";
+
         public int NodeCount { get; set; }
     }
 }

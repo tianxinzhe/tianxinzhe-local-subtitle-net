@@ -1,4 +1,5 @@
 using Prism.Commands;
+using Prism.Regions;
 using LemonSubtitleStudio.Models;
 using LemonSubtitleStudio.Services;
 using System;
@@ -6,10 +7,11 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 
 namespace LemonSubtitleStudio.ViewModels
 {
-    public class SubtitleTranslationViewModel : INotifyPropertyChanged
+    public class SubtitleTranslationViewModel : INotifyPropertyChanged, INavigationAware
     {
         private readonly IFileService _fileService;
         private readonly ITranslationService _translationService;
@@ -23,7 +25,8 @@ namespace LemonSubtitleStudio.ViewModels
         public ObservableCollection<string> Logs { get; } = new ObservableCollection<string>();
 
         public List<string> Languages { get; } = new List<string> { "中文", "English", "日本語", "한국어" };
-        public List<string> TranslationModels { get; } = new List<string> { "marianmt-en-zh", "marianmt-zh-en" };
+        public List<string> TranslationModels { get; } = new List<string> { "marianmt-en-zh", "marianmt-zh-en", "m2m100-418M", "nllb-200-distilled-600M" };
+        public List<string> TranslationEngines { get; } = new List<string> { "Auto", "ONNX (Local)", "Web API" };
 
         private string _selectedTranslationModel = "marianmt-en-zh";
         public string SelectedTranslationModel
@@ -60,6 +63,13 @@ namespace LemonSubtitleStudio.ViewModels
             set { _overallProgress = value; OnPropertyChanged(); }
         }
 
+        private string _translationEngine = "Auto";
+        public string TranslationEngine
+        {
+            get => _translationEngine;
+            set { _translationEngine = value; OnPropertyChanged(); }
+        }
+
         public DelegateCommand BrowseOutputDirectoryCommand { get; }
         public DelegateCommand StartProcessingCommand { get; }
         public DelegateCommand ExportAllCommand { get; }
@@ -77,12 +87,19 @@ namespace LemonSubtitleStudio.ViewModels
             _settingsService = settingsService;
 
             OutputDirectory = _settingsService.DefaultOutputDirectory;
+            TranslationEngine = _settingsService.TranslationEngine;
             BrowseOutputDirectoryCommand = new DelegateCommand(BrowseOutputDirectory);
             StartProcessingCommand = new DelegateCommand(async () => await StartProcessing());
             ExportAllCommand = new DelegateCommand(ExportAll);
             ClearQueueCommand = new DelegateCommand(ClearQueue);
             SelectFileCommand = new DelegateCommand(AddFiles);
         }
+
+        public bool IsNavigationTarget(NavigationContext navigationContext) => true;
+
+        public void OnNavigatedTo(NavigationContext navigationContext) { }
+
+        public void OnNavigatedFrom(NavigationContext navigationContext) { }
 
         private void BrowseOutputDirectory()
         {
@@ -121,9 +138,28 @@ namespace LemonSubtitleStudio.ViewModels
                         });
                     });
 
-                    var modelName = SourceLanguage == "中文" ? "marianmt-zh-en" : "marianmt-en-zh";
-                    var translatedSubtitles = await _translationService.TranslateSubtitlesAsync(
-                        subtitles, SourceLanguage, TargetLanguage, modelName, progress);
+                    var modelName = SelectedTranslationModel;
+                    List<SubtitleItem> translatedSubtitles;
+
+                    if (TranslationEngine == "Web API")
+                    {
+                        translatedSubtitles = await _translationService.TranslateSubtitlesWithWebAsync(
+                            subtitles, SourceLanguage, TargetLanguage, progress);
+                    }
+                    else
+                    {
+                        try
+                        {
+                            translatedSubtitles = await _translationService.TranslateSubtitlesAsync(
+                                subtitles, SourceLanguage, TargetLanguage, modelName, progress);
+                        }
+                        catch when (TranslationEngine == "Auto")
+                        {
+                            _loggingService.Log("ONNX translation failed, falling back to Web API...");
+                            translatedSubtitles = await _translationService.TranslateSubtitlesWithWebAsync(
+                                subtitles, SourceLanguage, TargetLanguage, progress);
+                        }
+                    }
 
                     Subtitles.Clear();
                     foreach (var sub in translatedSubtitles)

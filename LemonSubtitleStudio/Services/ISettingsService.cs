@@ -10,6 +10,7 @@ namespace LemonSubtitleStudio.Services
         string DefaultLanguage { get; set; }
         bool UseGPU { get; set; }
         string HuggingFaceBaseUrl { get; set; }
+        string TranslationEngine { get; set; }
         void Save();
         void Load();
         void RestoreDefaults();
