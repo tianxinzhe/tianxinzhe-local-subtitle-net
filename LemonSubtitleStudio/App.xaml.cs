@@ -9,6 +9,9 @@ using LemonSubtitleStudio.ViewModels;
 using LemonSubtitleStudio.Services;
 using System;
 using System.IO;
+using System.IO.Compression;
+using System.Net.Http;
+using System.Threading.Tasks;
 using System.Windows.Threading;
 using Xabe.FFmpeg;
 
@@ -16,6 +19,8 @@ namespace LemonSubtitleStudio
 {
     public partial class App : PrismApplication
     {
+        private const string FfmpegDownloadUrl = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip";
+
         public App()
         {
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
@@ -59,9 +64,14 @@ namespace LemonSubtitleStudio
             try
             {
                 var ffmpegPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "ffmpeg");
-                if (File.Exists(Path.Combine(ffmpegPath, "ffmpeg.exe")))
+                Directory.CreateDirectory(ffmpegPath);
+                if (File.Exists(Path.Combine(ffmpegPath, "ffmpeg.exe")) && File.Exists(Path.Combine(ffmpegPath, "ffprobe.exe")))
                 {
                     FFmpeg.SetExecutablesPath(ffmpegPath);
+                }
+                else
+                {
+                    _ = Task.Run(() => DownloadFfmpegAsync(ffmpegPath));
                 }
                 base.OnStartup(e);
             }
@@ -70,6 +80,37 @@ namespace LemonSubtitleStudio
                 LogError("OnStartup", ex);
                 MessageBox.Show($"应用程序启动失败: {ex.Message}\n\n详情已记录到日志文件", "启动错误", MessageBoxButton.OK, MessageBoxImage.Error);
                 Shutdown();
+            }
+        }
+
+        private static async Task DownloadFfmpegAsync(string targetDir)
+        {
+            try
+            {
+                var zipPath = Path.Combine(Path.GetTempPath(), "ffmpeg_download.zip");
+                if (File.Exists(zipPath)) File.Delete(zipPath);
+
+                using var client = new HttpClient { Timeout = TimeSpan.FromMinutes(10) };
+                using var stream = await client.GetStreamAsync(FfmpegDownloadUrl);
+                using var fs = File.Create(zipPath);
+                await stream.CopyToAsync(fs);
+
+                var extractPath = Path.Combine(Path.GetTempPath(), "ffmpeg_extract");
+                if (Directory.Exists(extractPath)) Directory.Delete(extractPath, true);
+                ZipFile.ExtractToDirectory(zipPath, extractPath);
+
+                var ffmpegExe = Directory.GetFiles(extractPath, "ffmpeg.exe", SearchOption.AllDirectories);
+                var ffprobeExe = Directory.GetFiles(extractPath, "ffprobe.exe", SearchOption.AllDirectories);
+                if (ffmpegExe.Length > 0) File.Copy(ffmpegExe[0], Path.Combine(targetDir, "ffmpeg.exe"), true);
+                if (ffprobeExe.Length > 0) File.Copy(ffprobeExe[0], Path.Combine(targetDir, "ffprobe.exe"), true);
+
+                File.Delete(zipPath);
+                Directory.Delete(extractPath, true);
+
+                FFmpeg.SetExecutablesPath(targetDir);
+            }
+            catch
+            {
             }
         }
 

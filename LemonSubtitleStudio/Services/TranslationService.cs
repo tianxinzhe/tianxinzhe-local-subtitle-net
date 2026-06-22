@@ -14,10 +14,14 @@ namespace LemonSubtitleStudio.Services
 {
     public class TranslationService : ITranslationService, IDisposable
     {
+        internal const int MaxInputChars = 512;
+        internal const int MaxDecodeSteps = 128;
+
         private readonly ISettingsService _settingsService;
         private readonly ILoggingService _loggingService;
         private readonly List<string> _availableModels = new List<string> { "marianmt-zh-en", "marianmt-en-zh", "nllb-200-distilled-600M", "m2m100-418M" };
         private readonly Dictionary<string, OnnxModelSession> _sessions = new();
+        private readonly HttpClient _httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
         private bool _disposed = false;
 
         public TranslationService(ISettingsService settingsService, ILoggingService loggingService)
@@ -141,10 +145,14 @@ namespace LemonSubtitleStudio.Services
             if (!await IsModelAvailable(modelName))
                 return content;
 
+            if (string.IsNullOrWhiteSpace(content))
+                return content;
+
             try
             {
                 var session = GetOrCreateSession(modelName);
-                return await Task.Run(() => TranslateWithOnnx(content, session));
+                var truncated = content.Length > MaxInputChars ? content.Substring(0, MaxInputChars) : content;
+                return await Task.Run(() => TranslateWithOnnx(truncated, session));
             }
             catch (Exception ex)
             {
@@ -157,64 +165,92 @@ namespace LemonSubtitleStudio.Services
         {
             var inputIds = session.Tokenizer.Encode(text);
             if (inputIds.Count == 0) return text;
+            if (inputIds.Count > MaxInputChars)
+                inputIds = inputIds.GetRange(0, MaxInputChars);
 
-            var inputIdsArray = inputIds.Select(id => (long)id).ToArray();
-            var attentionMask = inputIdsArray.Select(_ => 1L).ToArray();
-
-            var encInputIds = new DenseTensor<long>(inputIdsArray, new[] { 1, inputIdsArray.Length });
-            var encAttnMask = new DenseTensor<long>(attentionMask, new[] { 1, attentionMask.Length });
-
-            using var encResults = session.EncoderSession.Run(new List<NamedOnnxValue>
+            var inputIdsArray = new long[inputIds.Count];
+            var attentionMask = new long[inputIds.Count];
+            for (int i = 0; i < inputIds.Count; i++)
             {
-                NamedOnnxValue.CreateFromTensor("input_ids", encInputIds),
-                NamedOnnxValue.CreateFromTensor("attention_mask", encAttnMask)
-            });
-            var lastHiddenState = encResults.First(r => r.Name == "last_hidden_state").AsTensor<float>();
+                inputIdsArray[i] = inputIds[i];
+                attentionMask[i] = 1L;
+            }
 
-            var generatedTokens = AutoregressiveDecode(session, lastHiddenState, attentionMask);
-            return session.Tokenizer.Decode(generatedTokens);
+            IDisposable encResultsDisposable = null;
+            try
+            {
+                var encInputIds = new DenseTensor<long>(inputIdsArray, new[] { 1, inputIdsArray.Length });
+                var encAttnMask = new DenseTensor<long>(attentionMask, new[] { 1, attentionMask.Length });
+
+                var encResults = session.EncoderSession.Run(new List<NamedOnnxValue>
+                {
+                    NamedOnnxValue.CreateFromTensor("input_ids", encInputIds),
+                    NamedOnnxValue.CreateFromTensor("attention_mask", encAttnMask)
+                });
+                encResultsDisposable = encResults;
+
+                var encoderHidden = encResults.First(r => r.Name == "last_hidden_state").AsTensor<float>();
+
+                var generatedTokens = AutoregressiveDecode(session, encoderHidden, attentionMask);
+                return session.Tokenizer.Decode(generatedTokens);
+            }
+            finally
+            {
+                encResultsDisposable?.Dispose();
+            }
         }
 
         private List<int> AutoregressiveDecode(OnnxModelSession session, Tensor<float> encoderHiddenState, long[] encoderAttentionMask)
         {
             var config = session.Config;
-            var decInputIds = new List<long> { config.DecoderStartTokenId };
-            var generatedTokens = new List<int>();
+            var decInputIds = new long[1] { config.DecoderStartTokenId };
+            var generatedTokens = new List<int>(MaxDecodeSteps);
             var generatedTokenSet = new HashSet<int>();
-            float repetitionPenalty = 1.5f;
-            int maxLength = Math.Min(config.MaxLength, 200);
+            const float repetitionPenalty = 1.5f;
+            int maxLength = Math.Min(config.MaxLength, MaxDecodeSteps);
+            int encoderLen = encoderAttentionMask.Length;
 
             for (int step = 0; step < maxLength; step++)
             {
-                var decInputTensor = new DenseTensor<long>(decInputIds.ToArray(), new[] { 1, decInputIds.Count });
-                var encAttnTensor = new DenseTensor<long>(encoderAttentionMask, new[] { 1, encoderAttentionMask.Length });
+                var decInputTensor = new DenseTensor<long>(decInputIds, new[] { 1, decInputIds.Length });
+                var encAttnTensor = new DenseTensor<long>(encoderAttentionMask, new[] { 1, encoderLen });
 
-                using var decResults = session.DecoderSession.Run(new List<NamedOnnxValue>
+                IDisposable decResultsDisposable = null;
+                try
                 {
-                    NamedOnnxValue.CreateFromTensor("input_ids", decInputTensor),
-                    NamedOnnxValue.CreateFromTensor("encoder_attention_mask", encAttnTensor),
-                    NamedOnnxValue.CreateFromTensor("encoder_hidden_states", encoderHiddenState)
-                });
+                    var decResults = session.DecoderSession.Run(new List<NamedOnnxValue>
+                    {
+                        NamedOnnxValue.CreateFromTensor("input_ids", decInputTensor),
+                        NamedOnnxValue.CreateFromTensor("encoder_attention_mask", encAttnTensor),
+                        NamedOnnxValue.CreateFromTensor("encoder_hidden_states", encoderHiddenState)
+                    });
+                    decResultsDisposable = decResults;
 
-                var logits = decResults.First(r => r.Name == "logits").AsTensor<float>();
-                int seqLen = decInputIds.Count;
-                int vocabSize = logits.Dimensions[2];
+                    var logits = decResults.First(r => r.Name == "logits").AsTensor<float>();
+                    int seqLen = decInputIds.Length;
+                    int vocabSize = (int)logits.Length / seqLen;
 
-                float maxLogit = float.MinValue;
-                int nextToken = 0;
-                for (int v = 0; v < vocabSize; v++)
-                {
-                    float logit = logits[0, seqLen - 1, v];
-                    if (generatedTokenSet.Contains(v))
-                        logit = logit > 0 ? logit / repetitionPenalty : logit * repetitionPenalty;
-                    if (logit > maxLogit) { maxLogit = logit; nextToken = v; }
+                    float maxLogit = float.MinValue;
+                    int nextToken = 0;
+                    for (int v = 0; v < vocabSize; v++)
+                    {
+                        float logit = logits[0, seqLen - 1, v];
+                        if (generatedTokenSet.Contains(v))
+                            logit = logit > 0 ? logit / repetitionPenalty : logit * repetitionPenalty;
+                        if (logit > maxLogit) { maxLogit = logit; nextToken = v; }
+                    }
+
+                    if (nextToken == config.EosTokenId) break;
+
+                    generatedTokens.Add(nextToken);
+                    generatedTokenSet.Add(nextToken);
+                    Array.Resize(ref decInputIds, decInputIds.Length + 1);
+                    decInputIds[decInputIds.Length - 1] = nextToken;
                 }
-
-                if (nextToken == config.EosTokenId) break;
-
-                generatedTokens.Add(nextToken);
-                generatedTokenSet.Add(nextToken);
-                decInputIds.Add(nextToken);
+                finally
+                {
+                    decResultsDisposable?.Dispose();
+                }
             }
 
             return generatedTokens;
@@ -222,7 +258,7 @@ namespace LemonSubtitleStudio.Services
 
         public async Task<List<SubtitleItem>> TranslateSubtitlesAsync(List<SubtitleItem> subtitles, string sourceLang, string targetLang, string modelName, IProgress<int> progress)
         {
-            var translated = new List<SubtitleItem>();
+            var translated = new List<SubtitleItem>(subtitles.Count);
 
             for (int i = 0; i < subtitles.Count; i++)
             {
@@ -246,10 +282,11 @@ namespace LemonSubtitleStudio.Services
 
         public async Task<string> TranslateTextWithWebAsync(string content, string sourceLang, string targetLang)
         {
+            if (string.IsNullOrWhiteSpace(content))
+                return content;
+
             try
             {
-                using var client = new HttpClient();
-                client.Timeout = TimeSpan.FromSeconds(10);
                 var langMap = new Dictionary<string, string>
                 {
                     ["中文"] = "zh",
@@ -261,7 +298,7 @@ namespace LemonSubtitleStudio.Services
                 var tgt = langMap.TryGetValue(targetLang, out var t) ? t : "en";
                 var encoded = Uri.EscapeDataString(content);
                 var url = $"https://lingva.ml/api/v1/{src}/{tgt}/{encoded}";
-                var response = await client.GetStringAsync(url);
+                var response = await _httpClient.GetStringAsync(url);
                 using var doc = JsonDocument.Parse(response);
                 var translation = doc.RootElement.GetProperty("translation").GetString();
                 return translation ?? content;
@@ -274,7 +311,7 @@ namespace LemonSubtitleStudio.Services
 
         public async Task<List<SubtitleItem>> TranslateSubtitlesWithWebAsync(List<SubtitleItem> subtitles, string sourceLang, string targetLang, IProgress<int> progress)
         {
-            var translated = new List<SubtitleItem>();
+            var translated = new List<SubtitleItem>(subtitles.Count);
 
             for (int i = 0; i < subtitles.Count; i++)
             {
@@ -314,6 +351,7 @@ namespace LemonSubtitleStudio.Services
                     session.DecoderSession?.Dispose();
                 }
                 _sessions.Clear();
+                _httpClient.Dispose();
             }
 
             _disposed = true;
@@ -386,6 +424,8 @@ namespace LemonSubtitleStudio.Services
         public override List<int> Encode(string text)
         {
             var pretokenized = PreTokenize(text);
+            if (pretokenized.Length > TranslationService.MaxInputChars)
+                pretokenized = pretokenized.Substring(0, TranslationService.MaxInputChars);
             int n = pretokenized.Length;
             var bestScore = new double[n + 1];
             var bestTokenLen = new int[n + 1];
@@ -415,6 +455,7 @@ namespace LemonSubtitleStudio.Services
             while (p > 0)
             {
                 int len = bestTokenLen[p];
+                if (len <= 0) break;
                 var substr = pretokenized.Substring(p - len, len);
                 tokens.Add(_stringToId.TryGetValue(substr, out int id) ? id : _stringToId["<unk>"]);
                 p -= len;
@@ -439,6 +480,8 @@ namespace LemonSubtitleStudio.Services
 
         public override List<int> Encode(string text)
         {
+            if (text.Length > TranslationService.MaxInputChars)
+                text = text.Substring(0, TranslationService.MaxInputChars);
             var pretokenized = PreTokenize(text);
             var words = pretokenized.Split(' ');
             var allTokens = new List<int>();

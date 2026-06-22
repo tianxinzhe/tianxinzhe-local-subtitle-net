@@ -21,7 +21,8 @@ namespace LemonSubtitleStudio.ViewModels
         private readonly ISettingsService _settingsService;
 
         public ObservableCollection<TaskItem> Tasks { get; } = new ObservableCollection<TaskItem>();
-        public ObservableCollection<SubtitleItem> Subtitles { get; } = new ObservableCollection<SubtitleItem>();
+        public ObservableCollection<SubtitleItem> SourceSubtitles { get; } = new ObservableCollection<SubtitleItem>();
+        public ObservableCollection<SubtitleItem> TranslatedSubtitles { get; } = new ObservableCollection<SubtitleItem>();
         public ObservableCollection<string> Logs { get; } = new ObservableCollection<string>();
 
         public List<string> Languages { get; } = new List<string> { "中文", "English", "日本語", "한국어" };
@@ -122,12 +123,12 @@ namespace LemonSubtitleStudio.ViewModels
             {
                 try
                 {
-                    var subtitles = LoadSubtitles(task.InputPath);
-                    Subtitles.Clear();
-                    foreach (var sub in subtitles)
+                    var subtitles = await System.Threading.Tasks.Task.Run(() => LoadSubtitles(task.InputPath));
+
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                     {
-                        Subtitles.Add(sub);
-                    }
+                        ReplaceCollection(SourceSubtitles, subtitles);
+                    });
 
                     var progress = new Progress<int>(p =>
                     {
@@ -161,17 +162,17 @@ namespace LemonSubtitleStudio.ViewModels
                         }
                     }
 
-                    Subtitles.Clear();
-                    foreach (var sub in translatedSubtitles)
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                     {
-                        Subtitles.Add(sub);
-                    }
+                        ReplaceCollection(TranslatedSubtitles, translatedSubtitles);
+                    });
 
                     task.Progress = 100;
 
-                    var outputPath = Path.Combine(OutputDirectory, 
+                    var outputPath = Path.Combine(OutputDirectory,
                         $"{Path.GetFileNameWithoutExtension(task.InputPath)}_translated.srt");
-                    _subtitleService.SaveToBilingualSrt(outputPath, translatedSubtitles);
+                    await System.Threading.Tasks.Task.Run(() =>
+                        _subtitleService.SaveToBilingualSrt(outputPath, translatedSubtitles));
                     task.OutputPath = outputPath;
 
                     task.Status = LemonSubtitleStudio.Models.TaskStatus.Completed;
@@ -186,6 +187,13 @@ namespace LemonSubtitleStudio.ViewModels
 
                 OverallProgress = (Tasks.IndexOf(task) + 1) * 100 / Tasks.Count;
             }
+        }
+
+        private static void ReplaceCollection(ObservableCollection<SubtitleItem> target, List<SubtitleItem> source)
+        {
+            target.Clear();
+            foreach (var item in source)
+                target.Add(item);
         }
 
         private List<SubtitleItem> LoadSubtitles(string path)
@@ -210,7 +218,7 @@ namespace LemonSubtitleStudio.ViewModels
             }
         }
 
-        private void ClearQueue() { Tasks.Clear(); Subtitles.Clear(); }
+        private void ClearQueue() { Tasks.Clear(); SourceSubtitles.Clear(); TranslatedSubtitles.Clear(); }
 
         private void AddFiles()
         {

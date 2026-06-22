@@ -152,31 +152,39 @@
                             <Border Background="#28283D" Padding="12,6" BorderBrush="#534433" BorderThickness="0,0,0,1" CornerRadius="8,8,0,0">
                                 <TextBlock Text="{Binding SourceLanguage, StringFormat={}SOURCE ({0})}" Foreground="#D9C3AC" FontSize="10" FontWeight="Bold" />
                             </Border>
-                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="8">
-                                <ItemsControl ItemsSource="{Binding Subtitles}">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <Border Margin="0,0,0,6" Padding="12,8" Background="#111125" BorderBrush="#534433" BorderThickness="1" CornerRadius="6">
-                                                <Grid>
-                                                    <Grid.RowDefinitions>
-                                                        <RowDefinition Height="Auto" />
-                                                        <RowDefinition Height="Auto" />
-                                                    </Grid.RowDefinitions>
-                                                    <Grid>
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="*" />
-                                                            <ColumnDefinition Width="Auto" />
-                                                        </Grid.ColumnDefinitions>
-                                                        <TextBlock Text="{Binding StartTimeFormatted}" Foreground="#FFB95C" FontSize="10" FontFamily="Consolas" />
-                                                        <TextBlock Grid.Column="1" Text="{Binding Index, StringFormat={}#{0}}" Foreground="#D9C3AC" FontSize="10" FontFamily="Consolas" />
-                                                    </Grid>
-                                                    <TextBlock Grid.Row="1" Text="{Binding OriginalText}" Foreground="#D9C3AC" FontSize="12" TextWrapping="Wrap" Margin="0,4,0,0" />
-                                                </Grid>
-                                            </Border>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </ScrollViewer>
+                            <ListBox Grid.Row="1" ItemsSource="{Binding SourceSubtitles}" Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling" VirtualizingPanel.ScrollUnit="Pixel">
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem">
+                                        <Setter Property="Background" Value="Transparent" />
+                                        <Setter Property="BorderThickness" Value="0" />
+                                        <Setter Property="Padding" Value="0" />
+                                        <Setter Property="Margin" Value="0,0,0,6" />
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="ListBoxItem">
+                                                    <Border Margin="0,0,0,6" Padding="12,8" Background="#111125" BorderBrush="#534433" BorderThickness="1" CornerRadius="6">
+                                                        <Grid>
+                                                            <Grid.RowDefinitions>
+                                                                <RowDefinition Height="Auto" />
+                                                                <RowDefinition Height="Auto" />
+                                                            </Grid.RowDefinitions>
+                                                            <Grid>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*" />
+                                                                    <ColumnDefinition Width="Auto" />
+                                                                </Grid.ColumnDefinitions>
+                                                                <TextBlock Text="{Binding StartTimeFormatted}" Foreground="#FFB95C" FontSize="10" FontFamily="Consolas" />
+                                                                <TextBlock Grid.Column="1" Text="{Binding Index, StringFormat={}#{0}}" Foreground="#D9C3AC" FontSize="10" FontFamily="Consolas" />
+                                                            </Grid>
+                                                            <TextBlock Grid.Row="1" Text="{Binding OriginalText}" Foreground="#D9C3AC" FontSize="12" TextWrapping="Wrap" Margin="0,4,0,0" />
+                                                        </Grid>
+                                                    </Border>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+                            </ListBox>
                         </Grid>
                     </Border>
 
@@ -191,33 +199,39 @@
                             <Border Background="#28283D" Padding="12,6" BorderBrush="#534433" BorderThickness="0,0,0,1" CornerRadius="8,8,0,0">
                                 <TextBlock Text="{Binding TargetLanguage, StringFormat={}TARGET ({0})}" Foreground="#FFA500" FontSize="10" FontWeight="Bold" />
                             </Border>
-                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="8">
-                                <ItemsControl ItemsSource="{Binding Subtitles}">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <Border Margin="0,0,0,6" Padding="12,8" Background="#111125" BorderBrush="#534433" BorderThickness="1" CornerRadius="6">
-                                                <Grid>
-                                                    <Grid.RowDefinitions>
-                                                        <RowDefinition Height="Auto" />
-                                                        <RowDefinition Height="Auto" />
-                                                    </Grid.RowDefinitions>
-                                                    <Grid>
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="*" />
-                                                            <ColumnDefinition Width="Auto" />
-                                                        </Grid.ColumnDefinitions>
-                                                        <TextBlock Text="{Binding StartTimeFormatted}" Foreground="#FFB95C" FontSize="10" FontFamily="Consolas" />
-                                                        <materialDesign:PackIcon Grid.Column="1" Kind="CheckCircle" Width="14" Height="14" Foreground="#4ADE80" Visibility="{Binding IsTranslated, Converter={StaticResource BoolToVisibilityConverter}}" />
-                                                    </Grid>
-                                                    <TextBox Grid.Row="1" Text="{Binding TranslatedText, Mode=TwoWay}"
-                                                             Background="Transparent" Foreground="#FFB95C" BorderThickness="0"
-                                                             FontSize="12" TextWrapping="Wrap" Margin="0,4,0,0" AcceptsReturn="True" />
-                                                </Grid>
-                                            </Border>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </ScrollViewer>
+                            <ListBox Grid.Row="1" ItemsSource="{Binding TranslatedSubtitles}" Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling" VirtualizingPanel.ScrollUnit="Pixel">
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem">
+                                        <Setter Property="Background" Value="Transparent" />
+                                        <Setter Property="BorderThickness" Value="0" />
+                                        <Setter Property="Padding" Value="0" />
+                                        <Setter Property="Margin" Value="0,0,0,6" />
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="ListBoxItem">
+                                                    <Border Margin="0,0,0,6" Padding="12,8" Background="#111125" BorderBrush="#534433" BorderThickness="1" CornerRadius="6">
+                                                        <Grid>
+                                                            <Grid.RowDefinitions>
+                                                                <RowDefinition Height="Auto" />
+                                                                <RowDefinition Height="Auto" />
+                                                            </Grid.RowDefinitions>
+                                                            <Grid>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*" />
+                                                                    <ColumnDefinition Width="Auto" />
+                                                                </Grid.ColumnDefinitions>
+                                                                <TextBlock Text="{Binding StartTimeFormatted}" Foreground="#FFB95C" FontSize="10" FontFamily="Consolas" />
+                                                                <materialDesign:PackIcon Grid.Column="1" Kind="CheckCircle" Width="14" Height="14" Foreground="#4ADE80" Visibility="{Binding IsTranslated, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                                            </Grid>
+                                                            <TextBlock Grid.Row="1" Text="{Binding TranslatedText}" Foreground="#FFB95C" FontSize="12" TextWrapping="Wrap" Margin="0,4,0,0" />
+                                                        </Grid>
+                                                    </Border>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+                            </ListBox>
                         </Grid>
                     </Border>
                 </Grid>
